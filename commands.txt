@@ -1,0 +1,7 @@
+minikube start --disable-driver-mounts
+
+brew install hyperkit
+
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+
+minikube start --driver=hyperv

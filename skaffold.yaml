@@ -1,0 +1,23 @@
+apiVersion:  skaffold/v2beta28
+kind: Config
+build:
+  artifacts:
+    - image: playground
+      context: server/
+      docker:
+        buildArgs:
+          BUILD_COMMAND: cargo build
+          BUILD_TYPE: debug
+  tagPolicy:
+    sha256: {}
+deploy:
+  helm:
+    releases:
+      - name: playground
+        chartPath: helm/playground
+        valuesFiles:
+          - helm/playground/values.yaml
+        artifactOverrides:
+          imageKey: playground
+        imageStrategy:
+          fqn: {}
