@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::krunch::Krunch;
+use anyhow::Result;
 
 mod krunch;
 
@@ -9,6 +9,12 @@ async fn main() -> Result<()> {
     env_logger::init();
 
     let krunch = Krunch::new().await?;
+
+    krunch.create_namespace().await?;
+    krunch.create_service_account().await?;
+    krunch.create_cluster_role_binding().await?;
+    krunch.create_deployment().await?;
+
     let command = krunch.create_command()?;
     krunch.execute_generic_command(command).await?;
 
