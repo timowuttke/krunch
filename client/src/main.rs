@@ -15,6 +15,8 @@ use kube::{
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
+    let client = Client::try_default().await?;
+
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
 
@@ -22,10 +24,14 @@ async fn main() -> Result<()> {
         .iter()
         .fold(String::new(), |acc, x| acc.add(x).add(" "));
 
-    let mut command = vec!["sh", "-c", &test];
+    let command = vec!["sh", "-c", &test];
 
-    let client = Client::try_default().await?;
+    execute_generic_command(client, command).await;
 
+    Ok(())
+}
+
+async fn execute_generic_command(client: Client, command: Vec<&str>) -> Result<()> {
     let pod_name: String = get_pod_name(client.clone()).await;
 
     // Do an interactive exec to a blog pod with the `sh` command
