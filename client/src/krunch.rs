@@ -6,16 +6,13 @@ use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
 use std::env;
 use std::ops::Add;
 
+use crate::Krunch;
 use kube::api::{ListParams, ObjectList};
 use kube::{
     api::{Api, AttachParams, PostParams, ResourceExt, WatchEvent, WatchParams},
     Client,
 };
 use log::*;
-
-pub struct Krunch {
-    client: Client,
-}
 
 impl Krunch {
     pub async fn new() -> Result<Krunch> {
@@ -55,177 +52,6 @@ impl Krunch {
         let status = attached.take_status().unwrap().await.unwrap();
 
         info!("{:?}", status);
-
-        Ok(())
-    }
-
-    pub async fn create_namespace(&self) -> Result<()> {
-        let namespace: Namespace = serde_json::from_value(serde_json::json!({
-            "apiVersion": "v1",
-            "kind": "Namespace",
-            "metadata": {
-                "labels": {
-                    "kubernetes.io/metadata.name": "krunch"
-                },
-                "name": "krunch",
-            },
-            "spec": {
-                "finalizers": [
-                    "kubernetes"
-                ]
-            },
-            "status": {
-                "phase": "Active"
-            }
-        }))?;
-
-        let namespaces: Api<Namespace> = Api::all(self.client.clone());
-
-        namespaces
-            .create(&PostParams::default(), &namespace)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn create_service_account(&self) -> Result<()> {
-        let service_account: ServiceAccount = serde_json::from_value(serde_json::json!({
-            "apiVersion": "v1",
-            "kind": "ServiceAccount",
-            "metadata": {
-                "name": "krunch",
-                "namespace": "krunch"
-            }
-        }))?;
-
-        let service_accounts: Api<ServiceAccount> = Api::namespaced(self.client.clone(), "krunch");
-
-        service_accounts
-            .create(&PostParams::default(), &service_account)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn create_cluster_role_binding(&self) -> Result<()> {
-        let cluster_role_binding: ClusterRoleBinding = serde_json::from_value(serde_json::json!({
-            "apiVersion": "rbac.authorization.k8s.io/v1",
-            "kind": "ClusterRoleBinding",
-            "metadata": {
-                "name": "krunch-gets-cluster-admin"
-            },
-            "subjects": [
-                {
-                    "kind": "ServiceAccount",
-                    "name": "krunch",
-                    "namespace": "krunch"
-                }
-            ],
-            "roleRef": {
-                "kind": "ClusterRole",
-                "name": "cluster-admin",
-                "apiGroup": "rbac.authorization.k8s.io"
-            }
-        }))?;
-
-        let cluster_role_bindings: Api<ClusterRoleBinding> = Api::all(self.client.clone());
-
-        cluster_role_bindings
-            .create(&PostParams::default(), &cluster_role_binding)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn create_deployment(&self) -> Result<()> {
-        let deployment: Deployment = serde_json::from_value(serde_json::json!({
-            "apiVersion": "apps/v1",
-            "kind": "Deployment",
-            "metadata": {
-                "name": "krunch",
-                "namespace": "krunch",
-                "labels": {
-                    "app": "krunch"
-                }
-            },
-            "spec": {
-                "replicas": 1,
-                "selector": {
-                    "matchLabels": {
-                        "app": "krunch"
-                    }
-                },
-                "template": {
-                    "metadata": {
-                        "labels": {
-                            "app": "krunch"
-                        }
-                    },
-                    "spec": {
-                        "terminationGracePeriodSeconds": 0,
-                        "serviceAccountName": "krunch",
-                        "containers": [
-                            {
-                                "name": "krunch",
-                                "image": "timowuttke/krunch:latest",
-                                "volumeMounts": [
-                                    {
-                                        "mountPath": "/var/run",
-                                        "name": "docker-sock"
-                                    },
-                                    {
-                                        "mountPath": "/krunch",
-                                        "name": "krunch"
-                                    }
-                                ]
-                            }
-                        ],
-                        "volumes": [
-                            {
-                                "name": "docker-sock",
-                                "hostPath": {
-                                    "path": "/var/run"
-                                }
-                            },
-                            {
-                                "name": "krunch",
-                                "hostPath": {
-                                    "path": "/krunch"
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        }))?;
-
-        let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), "krunch");
-
-        // Stop on error including a pod already exists or is still being deleted.
-        deployments
-            .create(&PostParams::default(), &deployment)
-            .await?;
-
-        // Wait until the pod is running, otherwise we get 500 error.
-        // let wp = WatchParams::default()
-        //     .fields("metadata.name=krunch")
-        //     .timeout(10);
-        // let mut stream = pods.watch(&wp, "0").await?.boxed();
-        // while let Some(status) = stream.try_next().await? {
-        //     match status {
-        //         WatchEvent::Added(o) => {
-        //             info!("Added {}", o.name_any());
-        //         }
-        //         WatchEvent::Modified(o) => {
-        //             let s = o.status.as_ref().expect("status exists on pod");
-        //             if s.phase.clone().unwrap_or_default() == "Running" {
-        //                 info!("Ready to attach to {}", o.name_any());
-        //                 break;
-        //             }
-        //         }
-        //         _ => {}
-        //     }
-        // }
 
         Ok(())
     }
