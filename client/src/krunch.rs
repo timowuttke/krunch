@@ -167,7 +167,7 @@ impl Krunch {
                         "containers": [
                             {
                                 "name": "krunch",
-                                "image": "krunch:latest",
+                                "image": "timowuttke/krunch:latest",
                                 "volumeMounts": [
                                     {
                                         "mountPath": "/var/run",
