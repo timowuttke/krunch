@@ -13,13 +13,13 @@ async fn main() -> Result<()> {
 
     Krunch::execute_host_command("echo test123");
 
-    // krunch.create_namespace().await?;
-    // krunch.create_service_account().await?;
-    // krunch.create_cluster_role_binding().await?;
-    // krunch.create_deployment().await?;
+    krunch.create_namespace().await?;
+    krunch.create_service_account().await?;
+    krunch.create_cluster_role_binding().await?;
+    krunch.create_deployment().await?;
 
-    // let command = krunch.create_command()?;
-    // krunch.execute_generic_command(command).await?;
+    let command = krunch.create_command()?;
+    krunch.execute_generic_command(command).await?;
 
     Ok(())
 }
