@@ -1,6 +1,7 @@
 use crate::krunch::Krunch;
 use anyhow::Result;
 
+mod build_image;
 mod krunch;
 
 #[tokio::main]
@@ -10,13 +11,15 @@ async fn main() -> Result<()> {
 
     let krunch = Krunch::new().await?;
 
-    krunch.create_namespace().await?;
-    krunch.create_service_account().await?;
-    krunch.create_cluster_role_binding().await?;
-    krunch.create_deployment().await?;
+    Krunch::execute_host_command("echo test123");
 
-    let command = krunch.create_command()?;
-    krunch.execute_generic_command(command).await?;
+    // krunch.create_namespace().await?;
+    // krunch.create_service_account().await?;
+    // krunch.create_cluster_role_binding().await?;
+    // krunch.create_deployment().await?;
+
+    // let command = krunch.create_command()?;
+    // krunch.execute_generic_command(command).await?;
 
     Ok(())
 }

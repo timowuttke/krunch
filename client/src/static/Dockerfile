@@ -33,6 +33,6 @@ RUN curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v${SKAFFO
     chmod +x /usr/local/bin/skaffold
 
 
-WORKDIR /playground
+WORKDIR /krunch
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
