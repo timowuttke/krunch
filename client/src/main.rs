@@ -1,4 +1,5 @@
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 use kube::Client;
 use std::io;
 use std::io::Write;
@@ -11,6 +12,18 @@ pub struct Krunch {
     client: Client,
 }
 
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// setup Krunch for use
+    Init,
+}
+
 const NAMESPACE: &'static str = "krunch";
 const SERVICE_ACCOUNT: &'static str = "krunch";
 const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
@@ -19,6 +32,8 @@ const IMAGE: &'static str = "timowuttke/krunch:v1";
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let args = Cli::parse();
+
     let krunch = Krunch::new().await?;
 
     krunch.init().await?;
@@ -28,14 +43,4 @@ async fn main() -> Result<()> {
     // krunch.execute_generic_command(command).await?;
 
     Ok(())
-}
-
-pub async fn println_async(text: &str) {
-    println!("{}", text);
-    io::stdout().flush().unwrap();
-}
-
-pub async fn print_async(text: &str) {
-    print!("{}", text);
-    io::stdout().flush().unwrap();
 }
