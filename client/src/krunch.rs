@@ -1,18 +1,14 @@
-use anyhow::Result;
-use futures::{StreamExt, TryStreamExt};
-use k8s_openapi::api::apps::v1::Deployment;
-use k8s_openapi::api::core::v1::{Namespace, Pod, ServiceAccount};
-use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
+use anyhow::{anyhow, Result};
+use k8s_openapi::api::core::v1::Pod;
+use kube::api::{ListParams, ObjectList};
+use kube::{
+    api::{Api, AttachParams},
+    Client,
+};
 use std::env;
 use std::ops::Add;
 
-use crate::Krunch;
-use kube::api::{ListParams, ObjectList};
-use kube::{
-    api::{Api, AttachParams, PostParams, ResourceExt, WatchEvent, WatchParams},
-    Client,
-};
-use log::*;
+use crate::{Krunch, DEPLOYMENT, NAMESPACE};
 
 impl Krunch {
     pub async fn new() -> Result<Krunch> {
@@ -35,7 +31,10 @@ impl Krunch {
     }
 
     pub async fn execute_generic_command(&self, command: Vec<String>) -> Result<()> {
-        let pod_name: String = get_pod_name(self.client.clone()).await;
+        let pod_name: String = match self.get_pod_name().await {
+            None => return Err(anyhow!("Pod not found")),
+            Some(inner) => inner,
+        };
 
         let ap = AttachParams::default();
         let pods: Api<Pod> = Api::default_namespaced(self.client.clone());
@@ -51,24 +50,30 @@ impl Krunch {
         });
         let status = attached.take_status().unwrap().await.unwrap();
 
-        info!("{:?}", status);
+        println!("{:?}", status);
 
         Ok(())
     }
-}
 
-async fn get_pod_name(client: Client) -> String {
-    let pods: Api<Pod> = Api::default_namespaced(client);
+    pub async fn get_pod_name(&self) -> Option<String> {
+        let pods: Api<Pod> = Api::namespaced(self.client.clone(), NAMESPACE);
 
-    let lp = ListParams::default();
-    let test: ObjectList<Pod> = pods.list(&lp).await.unwrap();
+        let lp = ListParams::default().labels(&format!("app={}", DEPLOYMENT));
+        let test: ObjectList<Pod> = pods.list(&lp).await.unwrap();
 
-    test.items
-        .iter()
-        .find(|e| e.metadata.name.clone().unwrap().starts_with("krunch"))
-        .unwrap()
-        .metadata
-        .name
-        .clone()
-        .unwrap()
+        return if test.items.is_empty() {
+            None
+        } else {
+            Some(
+                test.items
+                    .iter()
+                    .next()
+                    .unwrap()
+                    .metadata
+                    .name
+                    .clone()
+                    .unwrap(),
+            )
+        };
+    }
 }

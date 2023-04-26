@@ -3,26 +3,39 @@ use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::{ContainerStatus, Namespace, Pod, ServiceAccount};
 use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
-use std::env;
-use std::ops::Add;
-use std::{thread, time};
-
-use crate::Krunch;
-use kube::api::{ListParams, ObjectList};
 use kube::{
-    api::{Api, AttachParams, PostParams, ResourceExt, WatchEvent, WatchParams},
-    Client, Error,
+    api::{Api, PostParams, WatchEvent, WatchParams},
+    Error,
 };
-use log::*;
+use std::io;
+use std::io::Write;
 
-const NAMESPACE: &'static str = "krunch";
-const SERVICE_ACCOUNT: &'static str = "krunch";
-const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
-const DEPLOYMENT: &'static str = "krunch";
-const IMAGE: &'static str = "timowuttke/krunch:v1";
+use crate::{Krunch, CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
 
 impl Krunch {
-    pub async fn create_namespace(&self) -> Result<()> {
+    pub async fn init(&self) -> Result<()> {
+        self.create_namespace().await?;
+
+        print!("creating service account...");
+        io::stdout().flush().unwrap();
+        self.create_service_account().await?;
+
+        print!("creating cluster role binding...");
+        io::stdout().flush().unwrap();
+        self.create_cluster_role_binding().await?;
+
+        print!("creating deployment...");
+        io::stdout().flush().unwrap();
+        self.create_deployment().await?;
+
+        print!("verifying pod is healthy...");
+        io::stdout().flush().unwrap();
+        self.wait_for_pod_to_be_healthy().await?;
+
+        Ok(())
+    }
+
+    async fn create_namespace(&self) -> Result<()> {
         let namespace: Namespace = serde_json::from_value(serde_json::json!({
             "apiVersion": "v1",
             "kind": "Namespace",
@@ -44,20 +57,13 @@ impl Krunch {
 
         let namespaces: Api<Namespace> = Api::all(self.client.clone());
 
-        match namespaces.create(&PostParams::default(), &namespace).await {
-            Ok(_) => {}
-            Err(Error::Api(inner)) => {
-                if inner.reason == "AlreadyExists" {
-                    info!("Namespace \"{}\" already exists", NAMESPACE)
-                }
-            }
-            Err(err) => return Err(anyhow!(err)),
-        };
+        let result = namespaces.create(&PostParams::default(), &namespace).await;
+        Krunch::handle_resource_creation_result(result)?;
 
         Ok(())
     }
 
-    pub async fn create_service_account(&self) -> Result<()> {
+    async fn create_service_account(&self) -> Result<()> {
         let service_account: ServiceAccount = serde_json::from_value(serde_json::json!({
             "apiVersion": "v1",
             "kind": "ServiceAccount",
@@ -69,23 +75,16 @@ impl Krunch {
 
         let service_accounts: Api<ServiceAccount> = Api::namespaced(self.client.clone(), NAMESPACE);
 
-        match service_accounts
+        let result = service_accounts
             .create(&PostParams::default(), &service_account)
-            .await
-        {
-            Ok(_) => {}
-            Err(Error::Api(inner)) => {
-                if inner.reason == "AlreadyExists" {
-                    info!("ServiceAccount \"{}\" already exists", SERVICE_ACCOUNT)
-                }
-            }
-            Err(err) => return Err(anyhow!(err)),
-        };
+            .await;
+
+        Krunch::handle_resource_creation_result(result)?;
 
         Ok(())
     }
 
-    pub async fn create_cluster_role_binding(&self) -> Result<()> {
+    async fn create_cluster_role_binding(&self) -> Result<()> {
         let cluster_role_binding: ClusterRoleBinding = serde_json::from_value(serde_json::json!({
             "apiVersion": "rbac.authorization.k8s.io/v1",
             "kind": "ClusterRoleBinding",
@@ -108,26 +107,16 @@ impl Krunch {
 
         let cluster_role_bindings: Api<ClusterRoleBinding> = Api::all(self.client.clone());
 
-        match cluster_role_bindings
+        let result = cluster_role_bindings
             .create(&PostParams::default(), &cluster_role_binding)
-            .await
-        {
-            Ok(_) => {}
-            Err(Error::Api(inner)) => {
-                if inner.reason == "AlreadyExists" {
-                    info!(
-                        "ClusterRoleBinding \"{}\" already exists",
-                        CLUSTER_ROLE_BINDING
-                    )
-                }
-            }
-            Err(err) => return Err(anyhow!(err)),
-        }
+            .await;
+
+        Krunch::handle_resource_creation_result(result)?;
 
         Ok(())
     }
 
-    pub async fn create_deployment(&self) -> Result<()> {
+    async fn create_deployment(&self) -> Result<()> {
         let deployment: Deployment = serde_json::from_value(serde_json::json!({
             "apiVersion": "apps/v1",
             "kind": "Deployment",
@@ -191,69 +180,90 @@ impl Krunch {
 
         let deployments: Api<Deployment> = Api::namespaced(self.client.clone(), NAMESPACE);
 
-        match deployments
+        let result = deployments
             .create(&PostParams::default(), &deployment)
-            .await
-        {
-            Ok(_) => {}
-            Err(Error::Api(inner)) => {
-                if inner.reason == "AlreadyExists" {
-                    info!("Deployment \"{}\" already exists", DEPLOYMENT)
-                }
-            }
-            Err(err) => return Err(anyhow!(err)),
-        }
+            .await;
+
+        Krunch::handle_resource_creation_result(result)?;
 
         Ok(())
     }
 
-    pub async fn verify_pod_is_healthy(&self) -> Result<()> {
+    async fn wait_for_pod_to_be_healthy(&self) -> Result<()> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), NAMESPACE);
 
         let wp = WatchParams::default()
             .fields("metadata.namespace=krunch")
             .timeout(10);
 
-        let pod: Pod = pods.get("krunch-686fb9db55-mxd8m").await?;
+        if let Some(pod_name) = self.get_pod_name().await {
+            let pod: Pod = pods.get(pod_name.as_str()).await?;
 
-        if Krunch::is_pod_healthy(pod) {
-            return Ok(());
+            if Krunch::is_pod_healthy(pod) {
+                println!(" done");
+                return Ok(());
+            }
         }
 
         let mut stream = pods.watch(&wp, "0").await?.boxed();
         while let Some(status) = stream.try_next().await? {
             match status {
-                WatchEvent::Added(p) => {
-                    info!("Added {}", p.name_any());
-                }
-                WatchEvent::Modified(p) => {
+                WatchEvent::Added(p) | WatchEvent::Modified(p) => {
                     if Krunch::is_pod_healthy(p) {
-                        info!("Pod is running");
-                        break;
+                        println!(" done");
+                        return Ok(());
                     }
                 }
                 _ => {}
             }
         }
 
-        Ok(())
+        Err(anyhow!("timeout waiting for pod to be ready"))
     }
 
     fn is_pod_healthy(pod: Pod) -> bool {
-        let container_issues: Vec<ContainerStatus> = pod
-            .status
-            .clone()
-            .unwrap()
-            .container_statuses
-            .unwrap()
+        let pod_status = match pod.status {
+            None => return false,
+            Some(inner) => inner.clone(),
+        };
+
+        let pod_phase = match pod_status.phase {
+            None => return false,
+            Some(inner) => inner.clone(),
+        };
+
+        let container_statuses = match pod_status.container_statuses {
+            None => return false,
+            Some(inner) => inner.clone(),
+        };
+
+        let container_issues: Vec<ContainerStatus> = container_statuses
             .iter()
             .filter(|s| {
-                s.state.clone().unwrap().waiting.is_some()
+                s.state.is_none()
+                    || s.state.clone().unwrap().waiting.is_some()
                     || s.state.clone().unwrap().terminated.is_some()
             })
             .map(|c| c.clone())
             .collect();
 
-        pod.status.clone().unwrap().phase.unwrap() == "Running" && container_issues.is_empty()
+        pod_phase == "Running" && container_issues.is_empty()
+    }
+
+    fn handle_resource_creation_result<T>(result: kube::Result<T, Error>) -> Result<()> {
+        match result {
+            Ok(_) => println!(" done"),
+            Err(Error::Api(inner)) => {
+                if inner.reason == "AlreadyExists" {
+                    println!(" already exists");
+                }
+            }
+            Err(err) => {
+                println!(" failure");
+                return Err(anyhow!(err));
+            }
+        }
+
+        Ok(())
     }
 }

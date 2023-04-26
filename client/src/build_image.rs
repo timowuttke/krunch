@@ -1,6 +1,5 @@
 use crate::Krunch;
 use anyhow::Result;
-use log::info;
 use std::process::Command;
 
 impl Krunch {
@@ -21,7 +20,7 @@ impl Krunch {
         let blub = String::from_utf8(output.stdout)?;
         let blub3 = String::from_utf8(output.stderr)?;
 
-        info!("{} and {}", blub, blub3);
+        println!("{} and {}", blub, blub3);
 
         Ok(())
     }
