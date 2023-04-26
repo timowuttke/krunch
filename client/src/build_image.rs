@@ -19,9 +19,9 @@ impl Krunch {
         };
 
         let blub = String::from_utf8(output.stdout)?;
-        let blub2 = String::from_utf8(output.stderr)?;
+        let blub3 = String::from_utf8(output.stderr)?;
 
-        info!("{} and {}", blub, blub2);
+        info!("{} and {}", blub, blub3);
 
         Ok(())
     }
