@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Result};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
-use k8s_openapi::api::core::v1::{Namespace, Pod, ServiceAccount};
+use k8s_openapi::api::core::v1::{ContainerStatus, Namespace, Pod, ServiceAccount};
 use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
 use std::env;
 use std::ops::Add;
+use std::{thread, time};
 
 use crate::Krunch;
 use kube::api::{ListParams, ObjectList};
@@ -213,34 +214,46 @@ impl Krunch {
             .fields("metadata.namespace=krunch")
             .timeout(10);
 
+        let pod: Pod = pods.get("krunch-686fb9db55-mxd8m").await?;
+
+        if Krunch::is_pod_healthy(pod) {
+            return Ok(());
+        }
+
         let mut stream = pods.watch(&wp, "0").await?.boxed();
         while let Some(status) = stream.try_next().await? {
             match status {
-                WatchEvent::Added(o) => {
-                    info!("Added {}", o.name_any());
+                WatchEvent::Added(p) => {
+                    info!("Added {}", p.name_any());
                 }
-                WatchEvent::Modified(o) => {
-                    let s = o.status.as_ref().expect("status exists on pod");
-
-                    info!("{:?}", s);
-
-                    if s.phase.clone().unwrap() == "Running" {
+                WatchEvent::Modified(p) => {
+                    if Krunch::is_pod_healthy(p) {
                         info!("Pod is running");
                         break;
                     }
                 }
-                WatchEvent::Bookmark(o) => {
-                    info!("Bookmark {:?}", o.types);
-                }
-                WatchEvent::Error(o) => {
-                    error!("Error {}", o.reason);
-                }
-                WatchEvent::Deleted(o) => {
-                    error!("Deleted {}", o.name_any());
-                }
+                _ => {}
             }
         }
 
         Ok(())
+    }
+
+    fn is_pod_healthy(pod: Pod) -> bool {
+        let container_issues: Vec<ContainerStatus> = pod
+            .status
+            .clone()
+            .unwrap()
+            .container_statuses
+            .unwrap()
+            .iter()
+            .filter(|s| {
+                s.state.clone().unwrap().waiting.is_some()
+                    || s.state.clone().unwrap().terminated.is_some()
+            })
+            .map(|c| c.clone())
+            .collect();
+
+        pod.status.clone().unwrap().phase.unwrap() == "Running" && container_issues.is_empty()
     }
 }
