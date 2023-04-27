@@ -14,6 +14,8 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
+        print!("creating namespace...");
+        io::stdout().flush().unwrap();
         self.create_namespace().await?;
 
         print!("creating service account...");
