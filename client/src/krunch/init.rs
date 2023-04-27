@@ -1,3 +1,5 @@
+use crate::krunch::{CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
+use crate::Krunch;
 use anyhow::{anyhow, Result};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
@@ -9,8 +11,6 @@ use kube::{
 };
 use std::io;
 use std::io::Write;
-
-use crate::{Krunch, CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
@@ -196,7 +196,7 @@ impl Krunch {
             .fields("metadata.namespace=krunch")
             .timeout(10);
 
-        if let Some(pod_name) = self.get_pod_name().await {
+        if let Some(pod_name) = self.get_krunch_pod_name().await {
             let pod: Pod = pods.get(pod_name.as_str()).await?;
 
             if Krunch::is_pod_healthy(pod) {

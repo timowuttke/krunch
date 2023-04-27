@@ -1,34 +1,38 @@
+use crate::krunch::Krunch;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use kube::Client;
-use std::io;
-use std::io::Write;
 
-mod build_image;
-mod init;
 mod krunch;
-
-pub struct Krunch {
-    client: Client,
-}
 
 #[derive(Parser)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Command,
 }
 
 #[derive(Subcommand)]
-enum Commands {
-    /// setup Krunch for use
-    Init,
+enum Command {
+    /// Create all files and kubernetes ressources necessary to run krunch
+    Install,
+    /// Remove all files and kubernetes ressources created by krunch
+    Uninstall,
+    /// Equivalent to "kubectl get"
+    Get {
+        #[clap(name = "kubectl_get_args")]
+        kubectl_get_args: Vec<String>,
+    },
+    /// Equivalent to "kubectl delete"
+    Delete {
+        #[clap(name = "kubectl_delete_args")]
+        kubectl_delete_args: Vec<String>,
+    },
+    /// Equivalent to "kubectl describe"
+    Describe {
+        #[clap(name = "kubectl_describe_args")]
+        kubectl_describe_args: Vec<String>,
+    },
+    Run,
 }
-
-const NAMESPACE: &'static str = "krunch";
-const SERVICE_ACCOUNT: &'static str = "krunch";
-const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
-const DEPLOYMENT: &'static str = "krunch";
-const IMAGE: &'static str = "timowuttke/krunch:v1";
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -36,7 +40,16 @@ async fn main() -> Result<()> {
 
     let krunch = Krunch::new().await?;
 
-    krunch.init().await?;
+    match &args.command {
+        Command::Install => krunch.init().await?,
+        Command::Get { kubectl_get_args } => {
+            let kubectl_command = kubectl_get_args
+                .iter()
+                .fold("kubectl get".to_string(), |acc, x| format!("{} {}", acc, x));
+            krunch.execute_pod_command(kubectl_command).await?;
+        }
+        _ => todo!(),
+    }
 
     // Krunch::execute_host_command("echo test123")?;
     // let command = krunch.create_command()?;
