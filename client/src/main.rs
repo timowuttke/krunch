@@ -1,6 +1,7 @@
 use crate::krunch::Krunch;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::{thread, time};
 
 mod krunch;
 
@@ -37,7 +38,6 @@ enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
-
     let krunch = Krunch::new().await?;
 
     match &args.command {
@@ -48,12 +48,22 @@ async fn main() -> Result<()> {
                 .fold("kubectl get".to_string(), |acc, x| format!("{} {}", acc, x));
             krunch.execute_pod_command(kubectl_command).await?;
         }
+        Command::Run => {
+            let mut child = Krunch::mount_current_path()?;
+
+            let some_seconds = time::Duration::from_secs(25);
+
+            println!("going to sleep now");
+            thread::sleep(some_seconds);
+
+            krunch
+                .execute_pod_command("skaffold run -n default".to_string())
+                .await?;
+
+            child.kill().await?;
+        }
         _ => todo!(),
     }
-
-    // Krunch::execute_host_command("echo test123")?;
-    // let command = krunch.create_command()?;
-    // krunch.execute_generic_command(command).await?;
 
     Ok(())
 }
