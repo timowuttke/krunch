@@ -19,7 +19,7 @@ impl Krunch {
         self.mount = Some(mount);
 
         let pod_name = self.get_krunch_pod_name().await.unwrap();
-        self.execute_pod_command(format!("kubectl delete po {}", pod_name))
+        self.execute_pod_command(format!("kubectl delete po {}", pod_name), false)
             .await?;
 
         self.wait_for_pod_to_be_healthy().await?;

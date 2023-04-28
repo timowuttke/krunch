@@ -21,15 +21,19 @@ async fn main() -> Result<()> {
                         .to_string()
                         .add(&*first)
                         .add(&*all_after_first),
+                    true,
                 )
-                .await?
+                .await?;
         }
         "run" => {
             krunch.mount_current_path().await?;
             krunch
-                .execute_pod_command("skaffold run -n default".to_string())
+                .execute_pod_command("skaffold run -n default".to_string(), true)
                 .await?;
             krunch.unmount().await?;
+        }
+        "bomb" => {
+            krunch.bomb(all_after_first).await?;
         }
         _ => {}
     }

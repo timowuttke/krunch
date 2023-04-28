@@ -6,7 +6,11 @@ use kube::api::{Api, AttachParams};
 use tokio::process::Command;
 
 impl Krunch {
-    pub async fn execute_pod_command(&self, command: String) -> Result<()> {
+    pub async fn execute_pod_command(
+        &self,
+        command: String,
+        print_to_stdout: bool,
+    ) -> Result<(String, String)> {
         let mut sh_command = vec!["sh".to_string(), "-c".to_string()];
         sh_command.push(command);
 
@@ -21,25 +25,40 @@ impl Krunch {
 
         let mut stdout_reader = attached.stdout().unwrap();
         let mut stdout = tokio::io::stdout();
+        let mut stdout_buffer = Vec::new();
 
         let mut stderr_reader = attached.stderr().unwrap();
         let mut stderr = tokio::io::stderr();
+        let mut stderr_buffer = Vec::new();
 
-        tokio::spawn(async move {
-            tokio::io::copy(&mut stdout_reader, &mut stdout)
+        if print_to_stdout {
+            tokio::spawn(async move {
+                tokio::io::copy(&mut stdout_reader, &mut stdout)
+                    .await
+                    .unwrap();
+            });
+
+            tokio::spawn(async move {
+                tokio::io::copy(&mut stderr_reader, &mut stderr)
+                    .await
+                    .unwrap();
+            });
+        } else {
+            tokio::io::copy(&mut stdout_reader, &mut stdout_buffer)
                 .await
                 .unwrap();
-        });
 
-        tokio::spawn(async move {
-            tokio::io::copy(&mut stderr_reader, &mut stderr)
+            tokio::io::copy(&mut stderr_reader, &mut stderr_buffer)
                 .await
                 .unwrap();
-        });
+        };
 
         attached.take_status().unwrap().await.unwrap();
 
-        Ok(())
+        Ok((
+            String::from_utf8(stdout_buffer)?,
+            String::from_utf8(stderr_buffer)?,
+        ))
     }
 
     pub async fn execute_host_command(command: &str) -> Result<(String, String, i32)> {

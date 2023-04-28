@@ -38,6 +38,7 @@ impl Krunch {
         print!("verifying pod is healthy...");
         io::stdout().flush().unwrap();
         self.wait_for_pod_to_be_healthy().await?;
+        println!(" done");
 
         Ok(())
     }
@@ -212,7 +213,6 @@ impl Krunch {
             let pod: Pod = pods.get(pod_name.as_str()).await?;
 
             if Krunch::is_pod_healthy(pod) {
-                println!(" done");
                 return Ok(());
             }
         }
@@ -222,7 +222,6 @@ impl Krunch {
             match status {
                 WatchEvent::Added(p) | WatchEvent::Modified(p) => {
                     if Krunch::is_pod_healthy(p) {
-                        println!(" done");
                         return Ok(());
                     }
                 }
