@@ -2,10 +2,11 @@ use anyhow::Result;
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{ListParams, ObjectList};
 use kube::{Api, Client};
+use tokio::process::Child;
 
-mod commands_host;
-mod commands_pods;
 mod init;
+mod mount;
+mod pod_command;
 
 const NAMESPACE: &'static str = "krunch";
 const SERVICE_ACCOUNT: &'static str = "krunch";
@@ -15,13 +16,17 @@ const IMAGE: &'static str = "timowuttke/krunch:v1";
 
 pub struct Krunch {
     client: Client,
+    mount: Option<Child>,
 }
 
 impl Krunch {
     pub async fn new() -> Result<Krunch> {
         let client = Client::try_default().await?;
 
-        Ok(Krunch { client })
+        Ok(Krunch {
+            client,
+            mount: None,
+        })
     }
 
     pub async fn get_krunch_pod_name(&self) -> Option<String> {

@@ -191,7 +191,7 @@ impl Krunch {
         Ok(())
     }
 
-    async fn wait_for_pod_to_be_healthy(&self) -> Result<()> {
+    pub async fn wait_for_pod_to_be_healthy(&self) -> Result<()> {
         let pods: Api<Pod> = Api::namespaced(self.client.clone(), NAMESPACE);
 
         let wp = WatchParams::default()

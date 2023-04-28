@@ -38,30 +38,26 @@ enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
-    let krunch = Krunch::new().await?;
+    let mut krunch = Krunch::new().await?;
 
     match &args.command {
         Command::Install => krunch.init().await?,
+
         Command::Get { kubectl_get_args } => {
             let kubectl_command = kubectl_get_args
                 .iter()
                 .fold("kubectl get".to_string(), |acc, x| format!("{} {}", acc, x));
             krunch.execute_pod_command(kubectl_command).await?;
         }
+
         Command::Run => {
-            let mut child = Krunch::mount_current_path()?;
-
-            let some_seconds = time::Duration::from_secs(25);
-
-            println!("going to sleep now");
-            thread::sleep(some_seconds);
-
+            krunch.mount_current_path().await?;
             krunch
                 .execute_pod_command("skaffold run -n default".to_string())
                 .await?;
-
-            child.kill().await?;
+            krunch.unmount().await?;
         }
+
         _ => todo!(),
     }
 
