@@ -1,3 +1,4 @@
 .idea
 client/target
 server/target
+*.svg

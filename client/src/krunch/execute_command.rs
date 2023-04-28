@@ -42,7 +42,7 @@ impl Krunch {
         Ok(())
     }
 
-    pub async fn execute_host_command(command: &str) -> Result<(String, String)> {
+    pub async fn execute_host_command(command: &str) -> Result<(String, String, i32)> {
         let output = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .arg("-/C")
@@ -62,6 +62,7 @@ impl Krunch {
         Ok((
             String::from_utf8(output.stdout)?,
             String::from_utf8(output.stderr)?,
+            output.status.code().unwrap(),
         ))
     }
 }
