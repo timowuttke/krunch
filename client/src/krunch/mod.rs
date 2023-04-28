@@ -4,9 +4,9 @@ use kube::api::{ListParams, ObjectList};
 use kube::{Api, Client};
 use tokio::process::Child;
 
+mod execute_command;
 mod init;
 mod mount;
-mod pod_command;
 
 const NAMESPACE: &'static str = "krunch";
 const SERVICE_ACCOUNT: &'static str = "krunch";

@@ -41,27 +41,4 @@ impl Krunch {
 
         Ok(())
     }
-
-    async fn execute_host_command(command: &str) -> Result<(String, String)> {
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .arg("-/C")
-                .arg(command)
-                .output()
-                .await
-                .expect("failed to execute process")
-        } else {
-            Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .output()
-                .await
-                .expect("failed to execute process")
-        };
-
-        Ok((
-            String::from_utf8(output.stdout)?,
-            String::from_utf8(output.stderr)?,
-        ))
-    }
 }

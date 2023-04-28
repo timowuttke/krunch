@@ -3,6 +3,7 @@ use crate::Krunch;
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, AttachParams};
+use tokio::process::Command;
 
 impl Krunch {
     pub async fn execute_pod_command(&self, command: String) -> Result<()> {
@@ -39,5 +40,28 @@ impl Krunch {
         attached.take_status().unwrap().await.unwrap();
 
         Ok(())
+    }
+
+    pub async fn execute_host_command(command: &str) -> Result<(String, String)> {
+        let output = if cfg!(target_os = "windows") {
+            Command::new("cmd")
+                .arg("-/C")
+                .arg(command)
+                .output()
+                .await
+                .expect("failed to execute process")
+        } else {
+            Command::new("sh")
+                .arg("-c")
+                .arg(command)
+                .output()
+                .await
+                .expect("failed to execute process")
+        };
+
+        Ok((
+            String::from_utf8(output.stdout)?,
+            String::from_utf8(output.stderr)?,
+        ))
     }
 }

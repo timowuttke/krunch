@@ -14,6 +14,11 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
+        print!("enabling ingress addon...");
+        io::stdout().flush().unwrap();
+        self.enabling_ingress_addon().await?;
+        println!(" done");
+
         print!("creating namespace...");
         io::stdout().flush().unwrap();
         self.create_namespace().await?;
@@ -34,6 +39,11 @@ impl Krunch {
         io::stdout().flush().unwrap();
         self.wait_for_pod_to_be_healthy().await?;
 
+        Ok(())
+    }
+
+    async fn enabling_ingress_addon(&self) -> Result<()> {
+        Krunch::execute_host_command("minikube addons enable ingress").await?;
         Ok(())
     }
 
