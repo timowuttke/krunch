@@ -7,6 +7,7 @@ use tokio::process::Child;
 mod bomb;
 mod execute_command;
 mod init;
+mod mkcert;
 mod mount;
 
 const NAMESPACE: &'static str = "krunch";
