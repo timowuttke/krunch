@@ -17,6 +17,10 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
+
+
+        self.mkcert().await?;
+
         print!("{:<30}", "enabling ingress addon");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
