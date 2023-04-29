@@ -1,19 +1,23 @@
 use crate::krunch::{CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
 use crate::Krunch;
 use anyhow::{anyhow, Result};
+use base64::{engine::general_purpose, Engine as _};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
-use k8s_openapi::api::core::v1::{ContainerStatus, Namespace, Pod, ServiceAccount};
+use k8s_openapi::api::core::v1::{ContainerStatus, Namespace, Pod, Secret, ServiceAccount};
 use k8s_openapi::api::rbac::v1::ClusterRoleBinding;
 use kube::{
     api::{Api, PostParams, WatchEvent, WatchParams},
     Error,
 };
+use rcgen::generate_simple_self_signed;
 use std::io;
 use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
+        self.install_tls_secret().await?;
+
         print!("enabling ingress addon...");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
@@ -196,6 +200,36 @@ impl Krunch {
         let result = deployments
             .create(&PostParams::default(), &deployment)
             .await;
+
+        Krunch::handle_resource_creation_result(result)?;
+
+        Ok(())
+    }
+
+    async fn install_tls_secret(&self) -> Result<()> {
+        let subject_alt_names = vec!["k8s.local".to_string()];
+
+        let cert = generate_simple_self_signed(subject_alt_names).unwrap();
+        let tls_crt = general_purpose::STANDARD.encode(cert.serialize_pem().unwrap());
+        let tls_key = general_purpose::STANDARD.encode(cert.serialize_private_key_pem());
+
+        let secrets: Api<Secret> = Api::namespaced(self.client.clone(), "default");
+
+        let secret: Secret = serde_json::from_value(serde_json::json!({
+            "apiVersion": "v1",
+            "data": {
+                "tls.crt": tls_crt,
+                "tls.key": tls_key
+            },
+            "kind": "Secret",
+            "metadata": {
+                "name": "tls-by-krunch",
+                "namespace": "default"
+            },
+            "type": "kubernetes.io/tls"
+        }))?;
+
+        let result = secrets.create(&PostParams::default(), &secret).await;
 
         Krunch::handle_resource_creation_result(result)?;
 
