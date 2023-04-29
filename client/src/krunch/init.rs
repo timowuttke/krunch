@@ -11,46 +11,58 @@ use kube::{
     Error,
 };
 use rcgen::generate_simple_self_signed;
+use serde_json::Value;
 use std::io;
 use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
-        print!("{:<28}", "enabling ingress addon:");
+        print!("{:<30}", "enabling ingress addon");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
-        println!(" done");
 
-        print!("{:<28}", "creating TLS secret:");
+        print!("{:<30}", "creating TLS secret");
         io::stdout().flush().unwrap();
         self.install_tls_secret().await?;
 
-        print!("{:<28}", "creating namespace:");
+        print!("{:<30}", "creating namespace");
         io::stdout().flush().unwrap();
         self.create_namespace().await?;
 
-        print!("{:<28}", "creating service account:");
+        print!("{:<30}", "creating service account");
         io::stdout().flush().unwrap();
         self.create_service_account().await?;
 
-        print!("{:<28}", "creating role binding:");
+        print!("{:<30}", "creating role binding");
         io::stdout().flush().unwrap();
         self.create_cluster_role_binding().await?;
 
-        print!("{:<28}", "creating deployment:");
+        print!("{:<30}", "creating deployment");
         io::stdout().flush().unwrap();
         self.create_deployment().await?;
 
-        print!("{:<28}", "verifying pod is healthy:");
+        print!("{:<30}", "verifying pod is healthy");
         io::stdout().flush().unwrap();
         self.wait_for_pod_to_be_healthy().await?;
-        println!(" done");
+        println!("done");
 
         Ok(())
     }
 
     async fn enabling_ingress_addon(&self) -> Result<()> {
-        Krunch::execute_host_command("minikube addons enable ingress").await?;
+        let status: Value = serde_json::from_str(
+            &*Krunch::execute_host_command("minikube addons list --output json")
+                .await?
+                .0,
+        )?;
+
+        if status["ingress"]["Status"] == "enabled" {
+            println!("already enabled")
+        } else {
+            Krunch::execute_host_command("minikube addons enable ingress").await?;
+            println!("done")
+        }
+
         Ok(())
     }
 
@@ -299,14 +311,14 @@ impl Krunch {
 
     fn handle_resource_creation_result<T>(result: kube::Result<T, Error>) -> Result<()> {
         match result {
-            Ok(_) => println!(" done"),
+            Ok(_) => println!("done"),
             Err(Error::Api(inner)) => {
                 if inner.reason == "AlreadyExists" {
-                    println!(" already exists");
+                    println!("already exists");
                 }
             }
             Err(err) => {
-                println!(" failure");
+                println!("failure");
                 return Err(anyhow!(err));
             }
         }
