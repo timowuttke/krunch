@@ -23,7 +23,7 @@ impl Krunch {
             Some(inner) => inner,
         };
 
-        self.execute_pod_command(format!("kubectl delete po {}", &pod_name), false)
+        self.execute_pod_command(format!("kubectl delete po {}", &pod_name), false, false)
             .await?;
 
         self.wait_for_pod_to_be_healthy().await?;

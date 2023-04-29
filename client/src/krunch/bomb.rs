@@ -1,5 +1,5 @@
 use crate::Krunch;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 impl Krunch {
     pub async fn bomb(&self, command: String) -> Result<()> {
@@ -8,14 +8,20 @@ impl Krunch {
             Some(inner) => inner,
         };
 
+        if ns.starts_with("kube-") || ns.starts_with("ingress-") || ns.starts_with("krunch") {
+            return Err(anyhow!("cleaning namespace {} is not allowed", ns));
+        };
+
         let helm_deployments = self
             .execute_pod_command(
                 format!("helm ls -n {} --all --short", ns).to_string(),
                 false,
+                false,
             )
-            .await?;
+            .await?
+            .0;
 
-        if !helm_deployments.0.is_empty() {
+        if !helm_deployments.is_empty() {
             self.execute_pod_command(
                 format!(
                     "helm ls -n {} --all --short | xargs -L1 helm -n {} delete",
@@ -23,15 +29,34 @@ impl Krunch {
                 )
                 .to_string(),
                 true,
+                true,
             )
             .await?;
         };
 
-        self.execute_pod_command(
-            format!("kubectl delete all --all -n {}", ns).to_string(),
-            true,
-        )
-        .await?;
+        let plain_k8s_resources = self.execute_pod_command(
+            format!("kubectl get all -n {} | grep -v -e \"service/kubernetes\" -e \"NAME\" -e \"^[[:blank:]]*$\" | awk '{{print $1}}'", ns).to_string(),
+            false, false
+        ).await?.0;
+
+        if ns == "default" {
+            self.execute_pod_command(
+                format!(
+                    "echo '{}' | xargs kubectl delete -n {}",
+                    plain_k8s_resources, ns
+                )
+                .to_string(),
+                true,
+                false,
+            )
+            .await?;
+        } else {
+            self.execute_pod_command(
+                format!("kubectl get all -n {} | grep -v -e \"NAME\" -e \"^[[:blank:]]*$\" | awk '{{print $1}}' {} | xargs kubectl delete -n {}", ns, ns, ns).to_string(),
+                true, false
+            )
+                .await?;
+        }
 
         Ok(())
     }

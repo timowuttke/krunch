@@ -10,6 +10,7 @@ impl Krunch {
         &self,
         command: String,
         print_to_stdout: bool,
+        print_to_stderr: bool,
     ) -> Result<(String, String)> {
         let mut sh_command = vec!["sh".to_string(), "-c".to_string()];
         sh_command.push(command);
@@ -37,17 +38,19 @@ impl Krunch {
                     .await
                     .unwrap();
             });
+        } else {
+            tokio::io::copy(&mut stdout_reader, &mut stdout_buffer)
+                .await
+                .unwrap();
+        };
 
+        if print_to_stderr {
             tokio::spawn(async move {
                 tokio::io::copy(&mut stderr_reader, &mut stderr)
                     .await
                     .unwrap();
             });
         } else {
-            tokio::io::copy(&mut stdout_reader, &mut stdout_buffer)
-                .await
-                .unwrap();
-
             tokio::io::copy(&mut stderr_reader, &mut stderr_buffer)
                 .await
                 .unwrap();
