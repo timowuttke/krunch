@@ -1,7 +1,7 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{ListParams, ObjectList};
-use kube::{Api, Client};
+use kube::{config, Api, Client};
 use tokio::process::Child;
 
 mod bomb;
@@ -22,7 +22,15 @@ pub struct Krunch {
 
 impl Krunch {
     pub async fn new() -> Result<Krunch> {
-        let client = Client::try_default().await?;
+        let client = match Client::try_default().await {
+            Ok(inner) => inner,
+            Err(_) => {
+                return Err(anyhow!(
+                    "minikube is not running, consider starting it with \"minikube start\""
+                ));
+            }
+        };
+        // ToDo: make sure the context is minikube
 
         Ok(Krunch {
             client,

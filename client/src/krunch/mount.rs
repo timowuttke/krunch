@@ -1,5 +1,5 @@
 use crate::Krunch;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::env;
 use std::process::Stdio;
 
@@ -18,8 +18,12 @@ impl Krunch {
 
         self.mount = Some(mount);
 
-        let pod_name = self.get_krunch_pod_name().await.unwrap();
-        self.execute_pod_command(format!("kubectl delete po {}", pod_name), false)
+        let pod_name: String = match self.get_krunch_pod_name().await {
+            None => return Err(anyhow!("krunch pod not found, consider \"krunch init\"")),
+            Some(inner) => inner,
+        };
+
+        self.execute_pod_command(format!("kubectl delete po {}", &pod_name), false)
             .await?;
 
         self.wait_for_pod_to_be_healthy().await?;

@@ -15,7 +15,7 @@ impl Krunch {
         sh_command.push(command);
 
         let pod_name: String = match self.get_krunch_pod_name().await {
-            None => return Err(anyhow!("Pod not found")),
+            None => return Err(anyhow!("krunch pod not found, consider \"krunch init\"")),
             Some(inner) => inner,
         };
 
