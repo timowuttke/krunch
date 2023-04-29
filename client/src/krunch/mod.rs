@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{ListParams, ObjectList};
-use kube::{config, Api, Client};
+use kube::{Api, Client};
 use tokio::process::Child;
 
 mod bomb;
@@ -13,7 +13,7 @@ const NAMESPACE: &'static str = "krunch";
 const SERVICE_ACCOUNT: &'static str = "krunch";
 const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
 const DEPLOYMENT: &'static str = "krunch";
-const IMAGE: &'static str = "timowuttke/krunch:v1";
+const IMAGE: &'static str = "timowuttke/krunch:0.1.0";
 
 pub struct Krunch {
     client: Client,

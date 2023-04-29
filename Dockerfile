@@ -4,6 +4,7 @@ ARG SKAFFOLD_VERSION=2.3.1
 ARG DOCKER_VERSION=23.0.4
 ARG HELM_VERSION=3.2.0
 ARG KUBECTL_VERSION=1.26.0
+ARG K9S_VERSION=0.27.3
 
 # install tools
 RUN apt-get update && apt-get -y install ca-certificates curl gnupg wget
@@ -31,6 +32,11 @@ RUN curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubec
 RUN curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v${SKAFFOLD_VERSION}/skaffold-linux-amd64 && \
     mv skaffold /usr/local/bin/skaffold && \
     chmod +x /usr/local/bin/skaffold
+
+# install k9s
+RUN curl -Lo k9s.tar.gz https://github.com/derailed/k9s/releases/download/v${K9S_VERSION}/k9s_Linux_amd64.tar.gz && tar -xzf k9s.tar.gz && \
+    mv k9s /usr/local/bin/k9s && \
+    chmod +x /usr/local/bin/k9s
 
 
 WORKDIR /krunch

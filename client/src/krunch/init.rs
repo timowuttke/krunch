@@ -207,7 +207,7 @@ impl Krunch {
 
         let wp = WatchParams::default()
             .fields("metadata.namespace=krunch")
-            .timeout(10);
+            .timeout(20);
 
         if let Some(pod_name) = self.get_krunch_pod_name().await {
             let pod: Pod = pods.get(pod_name.as_str()).await?;
