@@ -17,17 +17,13 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
-
-
+        print!("{:<30}", "creating TLS secret");
+        io::stdout().flush().unwrap();
         self.mkcert().await?;
 
         print!("{:<30}", "enabling ingress addon");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
-
-        print!("{:<30}", "creating TLS secret");
-        io::stdout().flush().unwrap();
-        self.install_tls_secret().await?;
 
         print!("{:<30}", "creating namespace");
         io::stdout().flush().unwrap();
@@ -224,13 +220,7 @@ impl Krunch {
         Ok(())
     }
 
-    async fn install_tls_secret(&self) -> Result<()> {
-        let subject_alt_names = vec!["k8s.local".to_string()];
-
-        let cert = generate_simple_self_signed(subject_alt_names).unwrap();
-        let tls_crt = general_purpose::STANDARD.encode(cert.serialize_pem().unwrap());
-        let tls_key = general_purpose::STANDARD.encode(cert.serialize_private_key_pem());
-
+    pub async fn install_tls_secret(&self, tls_crt: String, tls_key: String) -> Result<()> {
         let secrets: Api<Secret> = Api::namespaced(self.client.clone(), "default");
 
         let secret: Secret = serde_json::from_value(serde_json::json!({
@@ -247,6 +237,7 @@ impl Krunch {
             "type": "kubernetes.io/tls"
         }))?;
 
+        //todo: patch, also for the other create calls
         let result = secrets.create(&PostParams::default(), &secret).await;
 
         Krunch::handle_resource_creation_result(result)?;
