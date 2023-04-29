@@ -1,3 +1,2 @@
 .idea
-client/target
-server/target
+target
