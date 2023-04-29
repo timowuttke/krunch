@@ -16,30 +16,32 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
-        self.install_tls_secret().await?;
-
-        print!("enabling ingress addon...");
+        print!("{:<28}", "enabling ingress addon:");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
         println!(" done");
 
-        print!("creating namespace...");
+        print!("{:<28}", "creating TLS secret:");
+        io::stdout().flush().unwrap();
+        self.install_tls_secret().await?;
+
+        print!("{:<28}", "creating namespace:");
         io::stdout().flush().unwrap();
         self.create_namespace().await?;
 
-        print!("creating service account...");
+        print!("{:<28}", "creating service account:");
         io::stdout().flush().unwrap();
         self.create_service_account().await?;
 
-        print!("creating cluster role binding...");
+        print!("{:<28}", "creating role binding:");
         io::stdout().flush().unwrap();
         self.create_cluster_role_binding().await?;
 
-        print!("creating deployment...");
+        print!("{:<28}", "creating deployment:");
         io::stdout().flush().unwrap();
         self.create_deployment().await?;
 
-        print!("verifying pod is healthy...");
+        print!("{:<28}", "verifying pod is healthy:");
         io::stdout().flush().unwrap();
         self.wait_for_pod_to_be_healthy().await?;
         println!(" done");
