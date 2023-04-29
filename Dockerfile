@@ -28,6 +28,8 @@ RUN curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubec
     mv kubectl /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl
 
+
+# ToDo: disable the survey
 # install skaffold
 RUN curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v${SKAFFOLD_VERSION}/skaffold-linux-amd64 && \
     mv skaffold /usr/local/bin/skaffold && \
