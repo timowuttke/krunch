@@ -2,6 +2,7 @@ use crate::krunch::Krunch;
 use anyhow::Result;
 use std::ops::Add;
 
+mod installer;
 mod krunch;
 
 #[tokio::main]
@@ -13,6 +14,13 @@ async fn main() -> Result<()> {
     let mut krunch = Krunch::new().await?;
 
     match first.as_str() {
+        "new" => {
+            Krunch::download_file_to_bin_folder(
+                "https://www.rust-lang.org/logos/rust-logo-512x512.png",
+                "logo.png",
+            )
+            .await?
+        }
         "init" => krunch.init().await?,
         "get" | "delete" | "describe" => {
             krunch
