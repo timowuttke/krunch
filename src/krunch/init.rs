@@ -1,7 +1,6 @@
 use crate::krunch::{CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
 use crate::Krunch;
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose, Engine as _};
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::{ContainerStatus, Namespace, Pod, Secret, ServiceAccount};
@@ -10,7 +9,6 @@ use kube::{
     api::{Api, PostParams, WatchEvent, WatchParams},
     Error,
 };
-use rcgen::generate_simple_self_signed;
 use serde_json::Value;
 use std::io;
 use std::io::Write;
@@ -231,7 +229,7 @@ impl Krunch {
             },
             "kind": "Secret",
             "metadata": {
-                "name": "tls-by-krunch",
+                "name": "tls",
                 "namespace": "default"
             },
             "type": "kubernetes.io/tls"
