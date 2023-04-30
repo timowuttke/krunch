@@ -20,3 +20,6 @@ openssl = { version = "0.10", features = ["vendored"] }
 reqwest = "0.11.17"
 tempfile = "3.5.0"
 home = "0.5.5"
+flate2 = "1.0.26"
+tar = "0.4.38"
+walkdir = "2.3.3"

@@ -3,17 +3,22 @@ mod urls;
 use crate::installer::urls::DownloadUrls;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
+use flate2::read::GzDecoder;
 use std::fs;
 use std::fs::File;
 use std::io::{copy, Cursor};
 use std::path::PathBuf;
-use tempfile::Builder;
+use tar::Archive;
+use tempfile::{Builder, TempDir};
+use walkdir::{DirEntry, WalkDir};
 
 impl Krunch {
     pub async fn download_all() -> Result<()> {
-        let dl = DownloadUrls::new();
+        let url = DownloadUrls::new();
 
-        Self::download_file_to_bin_folder(dl.kubectl, "kubcetl").await?;
+        Self::download_file_to_bin_folder(url.docker, "docker").await?;
+        Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
+        Self::download_file_to_bin_folder(url.helm, "helm").await?;
 
         Ok(())
     }
@@ -47,7 +52,34 @@ impl Krunch {
             target_path.push_str(".exe");
         }
 
-        fs::copy(tmp_file_path, target_path)?;
+        if tmp_file_path.to_str().unwrap().ends_with(".tar.gz")
+            || tmp_file_path.to_str().unwrap().ends_with(".tgz")
+        {
+            let tar_gz = File::open(&tmp_file_path)?;
+            let tar = GzDecoder::new(tar_gz);
+            let mut archive = Archive::new(tar);
+            let tmp_dir = Builder::new().tempdir()?;
+
+            archive.unpack(&tmp_dir)?;
+
+            Self::find_and_copy_file(tmp_dir, target_name, target_path)?;
+        } else {
+            fs::copy(tmp_file_path, target_path)?;
+        }
+
+        Ok(())
+    }
+
+    fn find_and_copy_file(dir: TempDir, to_find: &str, target_path: String) -> std::io::Result<()> {
+        for file in WalkDir::new(dir.path())
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e: &DirEntry| e.file_type().is_file())
+        {
+            if file.file_name() == to_find {
+                fs::copy(file.path(), &target_path)?;
+            }
+        }
 
         Ok(())
     }
