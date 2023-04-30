@@ -27,11 +27,16 @@ impl Krunch {
     }
 
     async fn install_certificate_in_cluster(&self) -> Result<()> {
-        match Krunch::execute_host_command(
-            format!("./{} {}", MKCERT_FILE_NAME, MKCERT_HOST).as_str(),
-        )
-        .await
-        {
+        // todo: duplicated, move into execute host command somehow
+
+        let command;
+        if cfg!(target_os = "windows") {
+            command = format!("{}.exe {}", MKCERT_FILE_NAME, MKCERT_HOST);
+        } else {
+            command = format!("./{} {}", MKCERT_FILE_NAME, MKCERT_HOST);
+        }
+
+        match Krunch::execute_host_command(command.as_str()).await {
             Ok((_, stderr, status)) => {
                 if status != 0 {
                     return Err(anyhow!("mkcert cert creation failed with: {}", stderr));
@@ -58,9 +63,14 @@ impl Krunch {
     }
 
     async fn install_local_ca() -> Result<()> {
-        match Krunch::execute_host_command(format!("./{} --install", MKCERT_FILE_NAME).as_str())
-            .await
-        {
+        let command;
+        if cfg!(target_os = "windows") {
+            command = format!("{}.exe --install", MKCERT_FILE_NAME);
+        } else {
+            command = format!("./{} --install", MKCERT_FILE_NAME);
+        }
+
+        match Krunch::execute_host_command(command.as_str()).await {
             Ok((_, stderr, status)) => {
                 if status != 0 {
                     return Err(anyhow!("mkcert install failed with: {}", stderr));
@@ -111,14 +121,19 @@ impl Krunch {
         #[cfg(target_os = "windows")]
         {
             binary = include_bytes!("../mkcert/mkcert-v1.4.4-windows-amd64.exe");
-            std::fs::write(MKCERT_FILE_NAME, binary)?;
+            std::fs::write(format!("{}.exe", MKCERT_FILE_NAME), binary)?;
         }
 
         Ok(())
     }
 
     async fn clean_up() -> Result<()> {
-        fs::remove_file(MKCERT_FILE_NAME)?;
+        //todo: same, maybe have two consts for the file path, windows and unix
+        if cfg!(target_os = "windows") {
+            fs::remove_file(format!("{}.exe", MKCERT_FILE_NAME))?;
+        } else {
+            fs::remove_file(MKCERT_FILE_NAME)?;
+        }
         fs::remove_file(format!("{}-key.pem", MKCERT_HOST))?;
         fs::remove_file(format!("{}.pem", MKCERT_HOST))?;
 
