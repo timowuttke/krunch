@@ -110,11 +110,8 @@ impl Krunch {
         #[cfg(target_arch = "x86_64")]
         #[cfg(target_os = "windows")]
         {
-            use std::os::windows::fs::PermissionsExt;
-
             binary = include_bytes!("../mkcert/mkcert-v1.4.4-windows-amd64.exe");
             std::fs::write(MKCERT_FILE_NAME, binary)?;
-            fs::set_permissions(MKCERT_FILE_NAME, fs::Permissions::from_mode(0o755))?;
         }
 
         Ok(())
