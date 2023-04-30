@@ -37,12 +37,17 @@ impl Krunch {
         Ok(())
     }
 
-    fn handle_tmp_file(tmp_file: PathBuf, target_name: &str) -> Result<()> {
-        let mut bin_folder = Self::get_bin_folder()?;
+    fn handle_tmp_file(tmp_file_path: PathBuf, target_name: &str) -> Result<()> {
+        let bin_folder = Self::get_bin_folder()?;
         fs::create_dir_all(&bin_folder)?;
 
-        bin_folder.push_str(target_name);
-        fs::copy(tmp_file, bin_folder)?;
+        let mut target_path = format!("{}/{}", bin_folder, target_name);
+
+        if cfg!(target_os = "windows") {
+            target_path.push_str(".exe");
+        }
+
+        fs::copy(tmp_file_path, target_path)?;
 
         Ok(())
     }
@@ -50,7 +55,7 @@ impl Krunch {
     fn get_bin_folder() -> Result<String> {
         return match home::home_dir() {
             None => return Err(anyhow!("failed to detect home directory")),
-            Some(inner) => Ok(format!("{}/.krunch/bin/", inner.display())),
+            Some(inner) => Ok(format!("{}/.krunch/bin", inner.display())),
         };
     }
 }
