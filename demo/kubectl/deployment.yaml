@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: krunch-demo
+  labels:
+    app: krunch-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: krunch-demo
+  template:
+    metadata:
+      labels:
+        app: krunch-demo
+    spec:
+      containers:
+        - name: krunch-demo
+          image: krunch-demo
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80

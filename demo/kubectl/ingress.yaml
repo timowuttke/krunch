@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: krunch-demo
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - k8s.local
+      secretName: tls-by-krunch
+  rules:
+    - host: k8s.local
+      http:
+        paths:
+          - path: /krunch-demo
+            pathType: Prefix
+            backend:
+              service:
+                name: krunch-demo
+                port:
+                  number: 80

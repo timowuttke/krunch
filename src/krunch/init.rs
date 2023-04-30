@@ -1,4 +1,6 @@
-use crate::krunch::{CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT};
+use crate::krunch::{
+    CLUSTER_ROLE_BINDING, DEPLOYMENT, IMAGE, NAMESPACE, SERVICE_ACCOUNT, TLS_SECRET,
+};
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use futures::{StreamExt, TryStreamExt};
@@ -229,7 +231,7 @@ impl Krunch {
             },
             "kind": "Secret",
             "metadata": {
-                "name": "tls",
+                "name": TLS_SECRET,
                 "namespace": "default"
             },
             "type": "kubernetes.io/tls"

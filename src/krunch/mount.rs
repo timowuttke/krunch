@@ -10,6 +10,7 @@ impl Krunch {
         let current_dir_path_buff = env::current_dir()?;
         let current_dir_str = current_dir_path_buff.as_path().to_str().unwrap();
 
+        // todo: use execute host command and chaneg the later to not use sh -c
         let mount = Command::new("minikube")
             .arg("mount")
             .arg(format!("{}:/krunch", current_dir_str).as_str())
