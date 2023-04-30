@@ -4,6 +4,7 @@ use crate::installer::urls::DownloadUrls;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
+use reqwest::Url;
 use std::fs;
 use std::fs::File;
 use std::io::{copy, Cursor};
@@ -14,24 +15,25 @@ use walkdir::{DirEntry, WalkDir};
 
 impl Krunch {
     pub async fn download_all() -> Result<()> {
-        let url = DownloadUrls::new();
+        let url = DownloadUrls::new()?;
 
         Self::download_file_to_bin_folder(url.docker, "docker").await?;
         Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
         Self::download_file_to_bin_folder(url.helm, "helm").await?;
+        Self::download_file_to_bin_folder(url.skaffold, "skaffold").await?;
+        Self::download_file_to_bin_folder(url.k9s, "k9s").await?;
 
         Ok(())
     }
 
-    async fn download_file_to_bin_folder(url: String, target_name: &str) -> Result<()> {
-        let response = reqwest::get(url).await?;
-
+    async fn download_file_to_bin_folder(url: Url, target_name: &str) -> Result<()> {
         let tmp_dir = Builder::new().tempdir()?;
-        let tmp_file_name = response.url().path_segments().unwrap().last().unwrap();
+        let tmp_file_name = url.path_segments().unwrap().last().unwrap();
         let tmp_file_path = tmp_dir.path().join(tmp_file_name);
-
-        let mut content = Cursor::new(response.bytes().await?);
         let mut tmp_file = File::create(&tmp_file_path)?;
+
+        let response = reqwest::get(url).await?;
+        let mut content = Cursor::new(response.bytes().await?);
         copy(&mut content, &mut tmp_file)?;
 
         Self::handle_tmp_file(tmp_file_path, target_name)?;
