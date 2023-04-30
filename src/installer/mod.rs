@@ -59,11 +59,13 @@ impl Krunch {
         {
             let tar_gz = File::open(&tmp_file_path)?;
             let tar = GzDecoder::new(tar_gz);
-            let mut archive = Archive::new(tar);
             let tmp_dir = Builder::new().tempdir()?;
-
-            archive.unpack(&tmp_dir)?;
-
+            Archive::new(tar).unpack(&tmp_dir)?;
+            Self::find_and_copy_file(tmp_dir, target_name, target_path)?;
+        } else if tmp_file_path.to_str().unwrap().ends_with(".zip") {
+            let zip = File::open(&tmp_file_path)?;
+            let tmp_dir = Builder::new().tempdir()?;
+            zip::ZipArchive::new(zip)?.extract(&tmp_dir)?;
             Self::find_and_copy_file(tmp_dir, target_name, target_path)?;
         } else {
             fs::copy(tmp_file_path, target_path)?;
