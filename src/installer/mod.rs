@@ -72,7 +72,7 @@ impl Krunch {
             fs::copy(tmp_file_path, &target_path)?;
         }
 
-        if cfg!(target_familiy = "unix") {
+        if cfg!(target_family = "unix") {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(target_path, fs::Permissions::from_mode(0o755))?;
         }
