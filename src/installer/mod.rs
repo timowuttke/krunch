@@ -6,8 +6,9 @@ use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
 use reqwest::Url;
 use std::fs;
-use std::fs::File;
-use std::io::{copy, Cursor};
+use std::fs::{File, OpenOptions};
+use std::io::prelude::*;
+use std::io::{copy, BufReader, Cursor};
 use std::path::PathBuf;
 use tar::Archive;
 use tempfile::{Builder, TempDir};
@@ -20,9 +21,11 @@ impl Krunch {
         // Self::download_file_to_bin_folder(url.docker, "docker").await?;
         // Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
         // Self::download_file_to_bin_folder(url.helm, "helm").await?;
-        Self::download_file_to_bin_folder(url.mkcert, "mkcert").await?;
+        // Self::download_file_to_bin_folder(url.mkcert, "mkcert").await?;
         // Self::download_file_to_bin_folder(url.skaffold, "skaffold").await?;
         // Self::download_file_to_bin_folder(url.k9s, "k9s").await?;
+
+        Self::add_bin_folder_to_path()?;
 
         Ok(())
     }
@@ -103,5 +106,45 @@ impl Krunch {
             None => return Err(anyhow!("failed to detect home directory")),
             Some(inner) => Ok(format!("{}/.krunch/bin", inner.display())),
         };
+    }
+
+    fn add_bin_folder_to_path() -> Result<()> {
+        if cfg!(target_family = "unix") {
+            let profile = match home::home_dir() {
+                None => return Err(anyhow!("failed to detect home directory")),
+                Some(inner) => format!("{}/.profile", inner.display()),
+            };
+
+            let mut file = match OpenOptions::new()
+                .read(true)
+                .write(true)
+                .append(true)
+                .open(&profile)
+            {
+                Ok(file) => file,
+                Err(err) => {
+                    return Err(anyhow!(
+                        "failed to open user profile \"{}\": {}",
+                        profile,
+                        err
+                    ))
+                }
+            };
+
+            let reader = BufReader::new(&file);
+            let mut already_exists = false;
+            for line in reader.lines() {
+                if line?.contains("#krunch") {
+                    already_exists = true;
+                    break;
+                }
+            }
+
+            if !already_exists {
+                writeln!(file, "\n#krunch\nexport PATH=\"$HOME/.krunch/bin:$PATH\"",)?;
+            }
+        };
+
+        Ok(())
     }
 }
