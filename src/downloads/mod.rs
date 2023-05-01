@@ -152,12 +152,14 @@ impl Krunch {
             //todo: use PathBuff
             let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
 
-            if !current_path.contains(&win_bin_folder) {
+            if current_path.contains(&win_bin_folder) {
+                println!("already done");
+            } else {
                 let divider = if current_path.ends_with(";") { "" } else { ";" };
 
                 let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
 
-                //todo: rething command architecture
+                //todo: rethink command architecture
                 let write_reg_result = Command::new("reg")
                     .arg("add")
                     .arg("HKEY_CURRENT_USER\\Environment")
@@ -181,6 +183,8 @@ impl Krunch {
                         String::from_utf8(write_reg_result.stderr)?
                     ));
                 }
+
+                println!("success");
             }
         }
 
