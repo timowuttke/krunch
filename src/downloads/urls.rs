@@ -184,14 +184,20 @@ impl Krunch {
             TargetOs::Linux => "linux",
         };
 
+        let ext = match os {
+            TargetOs::Windows => ".exe",
+            TargetOs::MacOs => "",
+            TargetOs::Linux => "",
+        };
+
         let arch_str = match arch {
             TargetArch::Amd64 => "amd64",
             TargetArch::Arm64 => "arm64",
         };
 
         return Url::parse(&*format!(
-            "https://storage.googleapis.com/skaffold/releases/v{}/skaffold-{}-{}",
-            version, os_str, arch_str
+            "https://storage.googleapis.com/skaffold/releases/v{}/skaffold-{}-{}{}",
+            version, os_str, arch_str, ext
         ))
         .expect("failed to parse URL");
     }
