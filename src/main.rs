@@ -15,9 +15,9 @@ async fn main() -> Result<()> {
 
     match first.as_str() {
         "init" => krunch.init().await?,
-        "bomb" => {
-            krunch.bomb(all_after_first).await?;
-        }
+        // "bomb" => {
+        //     krunch.bomb(all_after_first).await?;
+        // }
         _ => {}
     }
 

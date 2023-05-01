@@ -4,11 +4,10 @@ use kube::api::{ListParams, ObjectList};
 use kube::{Api, Client};
 use tokio::process::Child;
 
-mod bomb;
-mod execute_command;
+// mod bomb;
+mod command;
 mod init;
 mod mkcert;
-mod mount;
 
 const NAMESPACE: &'static str = "krunch";
 const SERVICE_ACCOUNT: &'static str = "krunch";

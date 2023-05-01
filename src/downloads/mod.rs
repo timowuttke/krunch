@@ -18,7 +18,7 @@ impl Krunch {
         let downloads = Self::get_downloads();
 
         for download in downloads {
-            print!("downloading {:<20}", &download.target);
+            print!("downloading {:<18}", &download.target);
             io::stdout().flush().unwrap();
 
             if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target)).exists() {
