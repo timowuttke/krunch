@@ -12,7 +12,7 @@ futures = "0.3.17"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_json = "1.0"
 serde_with = "1.9.4"
-anyhow = "1.0.70"
+anyhow = { version = "1.0.70", features = ["backtrace"] }
 kube = { version = "0.82.2", features = ["runtime", "derive", "ws"] }
 k8s-openapi = { version = "0.18.0", features = ["v1_26"] }
 base64 = "0.21.0"
@@ -24,3 +24,5 @@ flate2 = "1.0.26"
 tar = "0.4.38"
 zip = "0.6.4"
 walkdir = "2.3.3"
+tracing = "0.1.36"
+tracing-subscriber = "0.3.3"

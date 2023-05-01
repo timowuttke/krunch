@@ -17,6 +17,8 @@ use std::io::Write;
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
+        Krunch::download_all().await?;
+
         print!("{:<30}", "creating TLS secret");
         io::stdout().flush().unwrap();
         self.mkcert().await?;
@@ -24,27 +26,6 @@ impl Krunch {
         print!("{:<30}", "enabling ingress addon");
         io::stdout().flush().unwrap();
         self.enabling_ingress_addon().await?;
-
-        print!("{:<30}", "creating namespace");
-        io::stdout().flush().unwrap();
-        self.create_namespace().await?;
-
-        print!("{:<30}", "creating service account");
-        io::stdout().flush().unwrap();
-        self.create_service_account().await?;
-
-        print!("{:<30}", "creating role binding");
-        io::stdout().flush().unwrap();
-        self.create_cluster_role_binding().await?;
-
-        print!("{:<30}", "creating deployment");
-        io::stdout().flush().unwrap();
-        self.create_deployment().await?;
-
-        print!("{:<30}", "verifying pod is healthy");
-        io::stdout().flush().unwrap();
-        self.wait_for_pod_to_be_healthy().await?;
-        println!("done");
 
         Ok(())
     }

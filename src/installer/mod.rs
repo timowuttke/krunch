@@ -110,26 +110,13 @@ impl Krunch {
 
     fn add_bin_folder_to_path() -> Result<()> {
         if cfg!(target_family = "unix") {
-            let profile = match home::home_dir() {
-                None => return Err(anyhow!("failed to detect home directory")),
-                Some(inner) => format!("{}/.profile", inner.display()),
-            };
+            let profile = format!("{}/.profile", home::home_dir().unwrap().display());
 
-            let mut file = match OpenOptions::new()
+            let mut file = OpenOptions::new()
                 .read(true)
                 .write(true)
                 .append(true)
-                .open(&profile)
-            {
-                Ok(file) => file,
-                Err(err) => {
-                    return Err(anyhow!(
-                        "failed to open user profile \"{}\": {}",
-                        profile,
-                        err
-                    ))
-                }
-            };
+                .open(&profile)?;
 
             let reader = BufReader::new(&file);
             let mut already_exists = false;

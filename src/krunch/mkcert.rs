@@ -13,7 +13,6 @@ const MKCERT_HOST: &'static str = "k8s.local";
 impl Krunch {
     pub async fn mkcert(&self) -> Result<()> {
         let result = async {
-            Self::create_os_specific_mkcert_binary()?;
             Self::install_local_ca().await?;
             self.install_certificate_in_cluster().await?;
             Ok::<(), Error>(())
@@ -107,7 +106,7 @@ impl Krunch {
             fs::set_permissions(MKCERT_FILE_NAME, fs::Permissions::from_mode(0o755))?;
         }
 
-        #[cfg(target_arch = "arm")]
+        #[cfg(target_arch = "aarch64")]
         #[cfg(target_os = "macos")]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -128,12 +127,6 @@ impl Krunch {
     }
 
     async fn clean_up() -> Result<()> {
-        //todo: same, maybe have two consts for the file path, windows and unix
-        if cfg!(target_os = "windows") {
-            fs::remove_file(format!("{}.exe", MKCERT_FILE_NAME))?;
-        } else {
-            fs::remove_file(MKCERT_FILE_NAME)?;
-        }
         fs::remove_file(format!("{}-key.pem", MKCERT_HOST))?;
         fs::remove_file(format!("{}.pem", MKCERT_HOST))?;
 
