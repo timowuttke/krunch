@@ -116,7 +116,7 @@ impl Krunch {
         };
 
         let ext = match os {
-            TargetOs::Windows => ".zip",
+            TargetOs::Windows => ".exe",
             TargetOs::MacOs => "",
             TargetOs::Linux => "",
         };
