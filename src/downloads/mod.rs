@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use std::{fs, io};
 use tar::Archive;
 use tempfile::{Builder, TempDir};
+use tokio::process::Command;
 use walkdir::{DirEntry, WalkDir};
 
 impl Krunch {
@@ -31,7 +32,12 @@ impl Krunch {
             }
         }
 
-        // Self::add_bin_folder_to_path().await?;
+        print!("{:30}", "adding tools to PATH");
+        io::stdout().flush().unwrap();
+
+        if let Err(_) = Self::add_bin_folder_to_path().await {
+            println!("failed, continuing without")
+        }
 
         Ok(())
     }
@@ -138,30 +144,39 @@ impl Krunch {
         if cfg!(target_os = "windows") {
             let tmp = Self::execute_command(Binary::None, "echo %PATH%").await?.0;
             let current_path = tmp.trim();
-            println!("current_path: {}", current_path);
 
+            //todo: use PathBuff
             let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
 
             if !current_path.contains(&win_bin_folder) {
                 let divider = if current_path.ends_with(";") { "" } else { ";" };
 
-                let new_path = format!("{}{}{}", current_path, divider, win_bin_folder);
+                let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
 
-                let args = format!(
-                    "reg add \"HKEY_CURRENT_USER\\Environment\" /v Path /t REG_SZ /d \"{}\" /f",
-                    new_path
-                );
-                println!("{}", args);
-                let blub = Self::execute_command(Binary::None, args.as_str()).await?;
-                println!("{:?}", blub);
+                //todo: rething command architecture
+                let write_reg_result = Command::new("reg")
+                    .arg("add")
+                    .arg("HKEY_CURRENT_USER\\Environment")
+                    .arg("/v")
+                    .arg("Path")
+                    .arg("/t")
+                    .arg("REG_SZ")
+                    .arg("/d")
+                    .arg(format!("{}", new_path))
+                    .arg("/f")
+                    .output()
+                    .await
+                    .expect("failed to execute process");
 
-                let blub = Self::execute_command(Binary::None, "SETX USERNAME %USERNAME%").await?;
+                let update_env_result =
+                    Self::execute_command(Binary::None, "SETX USERNAME %USERNAME%").await?;
 
-                println!("{:?}", blub);
-
-                // REG delete HKCU\Environment /F /V FOOBAR
-
-                // reg add "HKEY_CURRENT_USER\Environment" /v Path /t REG_SZ /d "%PATH%;C:\Users\Timo\.krunch\bin;" /f
+                if !write_reg_result.status.success() || update_env_result.2 != 0 {
+                    return Err(anyhow!(
+                        "failed to add bin folder to PATH: {}",
+                        String::from_utf8(write_reg_result.stderr)?
+                    ));
+                }
             }
         }
 
