@@ -36,7 +36,7 @@ impl Krunch {
         if status["ingress"]["Status"] == "enabled" {
             println!("already enabled")
         } else {
-            Krunch::execute_command(Binary::Minikube, "minikube addons enable ingress");
+            Krunch::execute_command(Binary::Minikube, "minikube addons enable ingress").await?;
             println!("done")
         }
 

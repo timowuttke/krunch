@@ -1,24 +1,15 @@
 use anyhow::{anyhow, Result};
-use k8s_openapi::api::core::v1::Pod;
-use kube::api::{ListParams, ObjectList};
-use kube::{Api, Client};
-use tokio::process::Child;
+use kube::Client;
 
 // mod bomb;
 mod command;
 mod init;
 mod mkcert;
 
-const NAMESPACE: &'static str = "krunch";
-const SERVICE_ACCOUNT: &'static str = "krunch";
-const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
-const DEPLOYMENT: &'static str = "krunch";
-const IMAGE: &'static str = "timowuttke/krunch:0.1.0";
 const TLS_SECRET: &'static str = "tls";
 
 pub struct Krunch {
     client: Client,
-    mount: Option<Child>,
 }
 
 impl Krunch {
@@ -26,43 +17,24 @@ impl Krunch {
         let client = match Client::try_default().await {
             Ok(inner) => inner,
             Err(err) => {
-                return Err(anyhow!("failed to load cluster config: {}", err));
+                return Err(anyhow!(
+                    "failed to load cluster config: {}",
+                    err.to_string()
+                ));
+            }
+        };
+
+        match client.apiserver_version().await {
+            Ok(inner) => inner,
+            Err(_) => {
+                return Err(anyhow!(
+                    "failed to connect to cluster, is minikube running?"
+                ));
             }
         };
 
         // ToDo: make sure the context is minikube
-        match client.apiserver_version().await {
-            Ok(inner) => inner,
-            Err(err) => {
-                return Err(anyhow!("failed to connect to cluster: {}", err));
-            }
-        };
 
-        Ok(Krunch {
-            client,
-            mount: None,
-        })
-    }
-
-    pub async fn get_krunch_pod_name(&self) -> Option<String> {
-        let pods: Api<Pod> = Api::namespaced(self.client.clone(), NAMESPACE);
-
-        let lp = ListParams::default().labels(&format!("app={}", DEPLOYMENT));
-        let test: ObjectList<Pod> = pods.list(&lp).await.unwrap();
-
-        return if test.items.is_empty() {
-            None
-        } else {
-            Some(
-                test.items
-                    .iter()
-                    .next()
-                    .unwrap()
-                    .metadata
-                    .name
-                    .clone()
-                    .unwrap(),
-            )
-        };
+        Ok(Krunch { client })
     }
 }

@@ -24,3 +24,4 @@ flate2 = "1.0.26"
 tar = "0.4.38"
 zip = "0.6.4"
 walkdir = "2.3.3"
+clap = { version = "4.2.5", features = ["derive"] }

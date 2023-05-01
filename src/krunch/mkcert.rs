@@ -18,7 +18,7 @@ impl Krunch {
         }
         .await;
 
-        Self::clean_up();
+        Self::clean_up().unwrap_or(());
         result?;
 
         Ok(())
@@ -66,8 +66,10 @@ impl Krunch {
         Ok(())
     }
 
-    fn clean_up() {
-        fs::remove_file(format!("{}-key.pem", MKCERT_HOST));
-        fs::remove_file(format!("{}.pem", MKCERT_HOST));
+    fn clean_up() -> Result<()> {
+        fs::remove_file(format!("{}-key.pem", MKCERT_HOST))?;
+        fs::remove_file(format!("{}.pem", MKCERT_HOST))?;
+
+        Ok(())
     }
 }

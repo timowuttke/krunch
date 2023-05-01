@@ -3,11 +3,11 @@ use anyhow::Result;
 use tokio::process::Command;
 
 pub enum Binary {
-    Docker,
-    Kubectl,
-    Helm,
-    Skaffold,
-    K9S,
+    _Docker,
+    _Kubectl,
+    _Helm,
+    _Skaffold,
+    _K9S,
     Mkcert,
     Minikube,
 }
@@ -21,11 +21,11 @@ impl Krunch {
         };
 
         let bin = match binary {
-            Binary::Docker => format!("{}/docker{}", Self::get_bin_folder()?, extension),
-            Binary::Kubectl => format!("{}/kubectl{}", Self::get_bin_folder()?, extension),
-            Binary::Helm => format!("{}/helm{}", Self::get_bin_folder()?, extension),
-            Binary::Skaffold => format!("{}/skaffold{}", Self::get_bin_folder()?, extension),
-            Binary::K9S => format!("{}/k9s{}", Self::get_bin_folder()?, extension),
+            Binary::_Docker => format!("{}/docker{}", Self::get_bin_folder()?, extension),
+            Binary::_Kubectl => format!("{}/kubectl{}", Self::get_bin_folder()?, extension),
+            Binary::_Helm => format!("{}/helm{}", Self::get_bin_folder()?, extension),
+            Binary::_Skaffold => format!("{}/skaffold{}", Self::get_bin_folder()?, extension),
+            Binary::_K9S => format!("{}/k9s{}", Self::get_bin_folder()?, extension),
             Binary::Mkcert => format!("{}/mkcert{}", Self::get_bin_folder()?, extension),
             Binary::Minikube => "minikube".to_string(),
         };
