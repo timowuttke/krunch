@@ -17,11 +17,12 @@ impl Krunch {
     pub async fn download_all() -> Result<()> {
         let url = DownloadUrls::new()?;
 
-        Self::download_file_to_bin_folder(url.docker, "docker").await?;
-        Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
-        Self::download_file_to_bin_folder(url.helm, "helm").await?;
-        Self::download_file_to_bin_folder(url.skaffold, "skaffold").await?;
-        Self::download_file_to_bin_folder(url.k9s, "k9s").await?;
+        // Self::download_file_to_bin_folder(url.docker, "docker").await?;
+        // Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
+        // Self::download_file_to_bin_folder(url.helm, "helm").await?;
+        Self::download_file_to_bin_folder(url.mkcert, "mkcert").await?;
+        // Self::download_file_to_bin_folder(url.skaffold, "skaffold").await?;
+        // Self::download_file_to_bin_folder(url.k9s, "k9s").await?;
 
         Ok(())
     }

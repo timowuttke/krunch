@@ -3,6 +3,7 @@ use reqwest::Url;
 
 const KUBECTL_VERSION: &str = "1.26.0";
 const HELM_VERSION: &str = "3.2.0";
+const MKCERT_VERSION: &str = "1.4.4";
 const SKAFFOLD_VERSION: &str = "2.3.1";
 const K9S_VERSION: &str = "0.27.3";
 const DOCKER_VERSION: &str = "23.0.4";
@@ -11,6 +12,7 @@ pub struct DownloadUrls {
     pub docker: Url,
     pub kubectl: Url,
     pub helm: Url,
+    pub mkcert: Url,
     pub skaffold: Url,
     pub k9s: Url,
 }
@@ -29,6 +31,10 @@ impl DownloadUrls {
                 helm: Url::parse(format!(
                     "https://get.helm.sh/helm-v{}-windows-amd64.zip",
                     HELM_VERSION
+                ).as_str())?,
+                mkcert: Url::parse(format!(
+                    "https://dl.filippo.io/mkcert/v{}?for=windows/amd64",
+                    MKCERT_VERSION
                 ).as_str())?,
                 skaffold: Url::parse(format!(
                     "https://storage.googleapis.com/skaffold/releases/v{}/skaffold-windows-amd64",
@@ -59,6 +65,13 @@ impl DownloadUrls {
                     format!(
                         "https://get.helm.sh/helm-v{}-darwin-amd64.tar.gz",
                         HELM_VERSION
+                    )
+                    .as_str(),
+                )?,
+                mkcert: Url::parse(
+                    format!(
+                        "https://dl.filippo.io/mkcert/v{}?for=darwin/amd64",
+                        MKCERT_VERSION
                     )
                     .as_str(),
                 )?,
@@ -100,6 +113,13 @@ impl DownloadUrls {
                     )
                     .as_str(),
                 )?,
+                mkcert: Url::parse(
+                    format!(
+                        "https://dl.filippo.io/mkcert/v{}?for=darwin/arm64",
+                        MKCERT_VERSION
+                    )
+                    .as_str(),
+                )?,
                 skaffold: Url::parse(
                     format!(
                     "https://storage.googleapis.com/skaffold/releases/v{}/skaffold-darwin-arm64",
@@ -138,6 +158,10 @@ impl DownloadUrls {
                     )
                         .as_str(),
                 )?,
+                mkcert: Url::parse(format!(
+                    "https://dl.filippo.io/mkcert/v{}?for=linux/amd64",
+                    MKCERT_VERSION
+                ).as_str())?,
                 skaffold: Url::parse(
                     format!(
                         "https://storage.googleapis.com/skaffold/releases/v{}/skaffold-linux-amd64",
