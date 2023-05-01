@@ -101,7 +101,7 @@ impl Krunch {
         Ok(())
     }
 
-    fn get_bin_folder() -> Result<String> {
+    pub fn get_bin_folder() -> Result<String> {
         return match home::home_dir() {
             None => return Err(anyhow!("failed to detect home directory")),
             Some(inner) => Ok(format!("{}/.krunch/bin", inner.display())),

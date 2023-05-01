@@ -7,7 +7,7 @@ use std::io::Read;
 use std::{fs, str};
 
 // todo: use a tmp path
-const MKCERT_FILE_NAME: &'static str = "mkcert_krunch";
+const MKCERT_FILE_NAME: &'static str = "mkcert";
 const MKCERT_HOST: &'static str = "k8s.local";
 
 impl Krunch {
@@ -19,7 +19,7 @@ impl Krunch {
         }
         .await;
 
-        Self::clean_up().await?;
+        Self::clean_up();
         result?;
 
         Ok(())
@@ -30,9 +30,19 @@ impl Krunch {
 
         let command;
         if cfg!(target_os = "windows") {
-            command = format!("{}.exe {}", MKCERT_FILE_NAME, MKCERT_HOST);
+            command = format!(
+                "{}/{}.exe {}",
+                Krunch::get_bin_folder()?,
+                MKCERT_FILE_NAME,
+                MKCERT_HOST
+            );
         } else {
-            command = format!("./{} {}", MKCERT_FILE_NAME, MKCERT_HOST);
+            command = format!(
+                "{}/{} {}",
+                Krunch::get_bin_folder()?,
+                MKCERT_FILE_NAME,
+                MKCERT_HOST
+            );
         }
 
         match Krunch::execute_host_command(command.as_str()).await {
@@ -64,9 +74,17 @@ impl Krunch {
     async fn install_local_ca() -> Result<()> {
         let command;
         if cfg!(target_os = "windows") {
-            command = format!("{}.exe --install", MKCERT_FILE_NAME);
+            command = format!(
+                "{}/{}.exe --install",
+                Krunch::get_bin_folder()?,
+                MKCERT_FILE_NAME
+            );
         } else {
-            command = format!("./{} --install", MKCERT_FILE_NAME);
+            command = format!(
+                "{}/{} --install",
+                Krunch::get_bin_folder()?,
+                MKCERT_FILE_NAME
+            );
         }
 
         match Krunch::execute_host_command(command.as_str()).await {
@@ -126,10 +144,8 @@ impl Krunch {
         Ok(())
     }
 
-    async fn clean_up() -> Result<()> {
-        fs::remove_file(format!("{}-key.pem", MKCERT_HOST))?;
-        fs::remove_file(format!("{}.pem", MKCERT_HOST))?;
-
-        Ok(())
+    fn clean_up() {
+        fs::remove_file(format!("{}-key.pem", MKCERT_HOST));
+        fs::remove_file(format!("{}.pem", MKCERT_HOST));
     }
 }

@@ -15,7 +15,7 @@ const SERVICE_ACCOUNT: &'static str = "krunch";
 const CLUSTER_ROLE_BINDING: &'static str = "krunch-gets-cluster-admin";
 const DEPLOYMENT: &'static str = "krunch";
 const IMAGE: &'static str = "timowuttke/krunch:0.1.0";
-const TLS_SECRET: &'static str = "tls-by-krunch";
+const TLS_SECRET: &'static str = "tls";
 
 pub struct Krunch {
     client: Client,
