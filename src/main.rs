@@ -3,7 +3,7 @@ use anyhow::Result;
 use std::ops::Add;
 use tracing::*;
 
-mod installer;
+mod downloads;
 mod krunch;
 
 #[tokio::main]

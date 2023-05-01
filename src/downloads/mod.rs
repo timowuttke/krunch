@@ -1,29 +1,34 @@
 mod urls;
 
-use crate::installer::urls::DownloadUrls;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
 use reqwest::Url;
-use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{copy, BufReader, Cursor};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 use tar::Archive;
 use tempfile::{Builder, TempDir};
 use walkdir::{DirEntry, WalkDir};
 
 impl Krunch {
     pub async fn download_all() -> Result<()> {
-        let url = DownloadUrls::new()?;
+        let downloads = Self::get_downloads();
 
-        // Self::download_file_to_bin_folder(url.docker, "docker").await?;
-        // Self::download_file_to_bin_folder(url.kubectl, "kubectl").await?;
-        // Self::download_file_to_bin_folder(url.helm, "helm").await?;
-        // Self::download_file_to_bin_folder(url.mkcert, "mkcert").await?;
-        // Self::download_file_to_bin_folder(url.skaffold, "skaffold").await?;
-        // Self::download_file_to_bin_folder(url.k9s, "k9s").await?;
+        for download in downloads {
+            print!("downloading {:<20}", &download.target);
+            io::stdout().flush().unwrap();
+
+            if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target)).exists() {
+                println!("already exists")
+            } else {
+                Self::download_file_to_bin_folder(download.source, download.target.as_str())
+                    .await?;
+                println!("done")
+            }
+        }
 
         Self::add_bin_folder_to_path()?;
 
@@ -52,11 +57,7 @@ impl Krunch {
         let bin_folder = Self::get_bin_folder()?;
         fs::create_dir_all(&bin_folder)?;
 
-        let mut target_path = format!("{}/{}", bin_folder, target_name);
-
-        if cfg!(target_os = "windows") {
-            target_path.push_str(".exe");
-        }
+        let target_path = format!("{}/{}", bin_folder, target_name);
 
         if tmp_file_path.to_str().unwrap().ends_with(".tar.gz")
             || tmp_file_path.to_str().unwrap().ends_with(".tgz")
@@ -75,7 +76,8 @@ impl Krunch {
             fs::copy(tmp_file_path, &target_path)?;
         }
 
-        if cfg!(target_family = "unix") {
+        #[cfg(target_family = "unix")]
+        {
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(target_path, fs::Permissions::from_mode(0o755))?;
         }
