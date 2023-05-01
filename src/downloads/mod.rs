@@ -1,5 +1,6 @@
 mod urls;
 
+use crate::krunch::command::Binary;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
@@ -30,7 +31,7 @@ impl Krunch {
             }
         }
 
-        Self::add_bin_folder_to_path()?;
+        // Self::add_bin_folder_to_path().await?;
 
         Ok(())
     }
@@ -110,7 +111,7 @@ impl Krunch {
         };
     }
 
-    fn add_bin_folder_to_path() -> Result<()> {
+    pub async fn add_bin_folder_to_path() -> Result<()> {
         if cfg!(target_family = "unix") {
             let profile = format!("{}/.profile", home::home_dir().unwrap().display());
 
@@ -133,6 +134,36 @@ impl Krunch {
                 writeln!(file, "\n#krunch\nexport PATH=\"$HOME/.krunch/bin:$PATH\"",)?;
             }
         };
+
+        if cfg!(target_os = "windows") {
+            let tmp = Self::execute_command(Binary::None, "echo %PATH%").await?.0;
+            let current_path = tmp.trim();
+            println!("current_path: {}", current_path);
+
+            let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
+
+            if !current_path.contains(&win_bin_folder) {
+                let divider = if current_path.ends_with(";") { "" } else { ";" };
+
+                let new_path = format!("{}{}{}", current_path, divider, win_bin_folder);
+
+                let args = format!(
+                    "reg add \"HKEY_CURRENT_USER\\Environment\" /v Path /t REG_SZ /d \"{}\" /f",
+                    new_path
+                );
+                println!("{}", args);
+                let blub = Self::execute_command(Binary::None, args.as_str()).await?;
+                println!("{:?}", blub);
+
+                let blub = Self::execute_command(Binary::None, "SETX USERNAME %USERNAME%").await?;
+
+                println!("{:?}", blub);
+
+                // REG delete HKCU\Environment /F /V FOOBAR
+
+                // reg add "HKEY_CURRENT_USER\Environment" /v Path /t REG_SZ /d "%PATH%;C:\Users\Timo\.krunch\bin;" /f
+            }
+        }
 
         Ok(())
     }

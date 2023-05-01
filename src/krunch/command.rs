@@ -10,6 +10,7 @@ pub enum Binary {
     _K9S,
     Mkcert,
     Minikube,
+    None,
 }
 
 impl Krunch {
@@ -28,6 +29,7 @@ impl Krunch {
             Binary::_K9S => format!("{}/k9s{}", Self::get_bin_folder()?, extension),
             Binary::Mkcert => format!("{}/mkcert{}", Self::get_bin_folder()?, extension),
             Binary::Minikube => "minikube".to_string(),
+            Binary::None => "".to_string(),
         };
 
         let command = format!("{} {}", bin, args);

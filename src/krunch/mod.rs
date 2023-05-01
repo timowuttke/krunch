@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use kube::Client;
 
 // mod bomb;
-mod command;
+pub mod command;
 mod init;
 mod mkcert;
 

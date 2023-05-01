@@ -15,15 +15,19 @@ struct Cli {
 enum Commands {
     /// download common tools and create local CA to access minikube over https
     Init,
+    Danger,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
-    let krunch = Krunch::new().await?;
 
     match &args.command {
-        Commands::Init => krunch.init().await?,
+        Commands::Init => {
+            let krunch = Krunch::new().await?;
+            krunch.init().await?
+        }
+        Commands::Danger => Krunch::add_bin_folder_to_path().await?,
     }
 
     Ok(())
