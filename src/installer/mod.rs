@@ -61,20 +61,29 @@ impl Krunch {
             let tar = GzDecoder::new(tar_gz);
             let tmp_dir = Builder::new().tempdir()?;
             Archive::new(tar).unpack(&tmp_dir)?;
-            Self::find_and_copy_file(tmp_dir, target_name, target_path)?;
+            Self::find_and_copy_file(tmp_dir, target_name, &target_path)?;
         } else if tmp_file_path.to_str().unwrap().ends_with(".zip") {
             let zip = File::open(&tmp_file_path)?;
             let tmp_dir = Builder::new().tempdir()?;
             zip::ZipArchive::new(zip)?.extract(&tmp_dir)?;
-            Self::find_and_copy_file(tmp_dir, target_name, target_path)?;
+            Self::find_and_copy_file(tmp_dir, target_name, &target_path)?;
         } else {
-            fs::copy(tmp_file_path, target_path)?;
+            fs::copy(tmp_file_path, &target_path)?;
+        }
+
+        if cfg!(target_familiy = "unix") {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(target_path, fs::Permissions::from_mode(0o755))?;
         }
 
         Ok(())
     }
 
-    fn find_and_copy_file(dir: TempDir, to_find: &str, target_path: String) -> std::io::Result<()> {
+    fn find_and_copy_file(
+        dir: TempDir,
+        to_find: &str,
+        target_path: &String,
+    ) -> std::io::Result<()> {
         for file in WalkDir::new(dir.path())
             .into_iter()
             .filter_map(Result::ok)
