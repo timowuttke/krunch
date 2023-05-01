@@ -26,13 +26,18 @@ impl Krunch {
     pub async fn new() -> Result<Krunch> {
         let client = match Client::try_default().await {
             Ok(inner) => inner,
-            Err(_) => {
-                return Err(anyhow!(
-                    "minikube is not running, consider starting it with \"minikube start\""
-                ));
+            Err(err) => {
+                return Err(anyhow!("failed to load cluster config: {}", err));
             }
         };
+
         // ToDo: make sure the context is minikube
+        match client.apiserver_version().await {
+            Ok(inner) => inner,
+            Err(err) => {
+                return Err(anyhow!("failed to connect to cluster: {}", err));
+            }
+        };
 
         Ok(Krunch {
             client,
