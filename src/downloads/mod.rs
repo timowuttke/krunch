@@ -24,11 +24,11 @@ impl Krunch {
             io::stdout().flush().unwrap();
 
             if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target)).exists() {
-                println!("already exists")
+                println!("already done")
             } else {
                 Self::download_file_to_bin_folder(download.source, download.target.as_str())
                     .await?;
-                println!("done")
+                println!("success")
             }
         }
 
@@ -127,6 +127,7 @@ impl Krunch {
                 .append(true)
                 .open(&profile)?;
 
+            //todo: echo $PATH
             let reader = BufReader::new(&file);
             let mut already_exists = false;
             for line in reader.lines() {
@@ -136,8 +137,11 @@ impl Krunch {
                 }
             }
 
-            if !already_exists {
+            if already_exists {
+                println!("already done");
+            } else {
                 writeln!(file, "\n#krunch\nexport PATH=\"$HOME/.krunch/bin:$PATH\"",)?;
+                println!("success");
             }
         };
 

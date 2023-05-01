@@ -34,10 +34,10 @@ impl Krunch {
         )?;
 
         if status["ingress"]["Status"] == "enabled" {
-            println!("already enabled")
+            println!("already done")
         } else {
             Krunch::execute_command(Binary::Minikube, "minikube addons enable ingress").await?;
-            println!("done")
+            println!("success")
         }
 
         Ok(())
@@ -70,10 +70,10 @@ impl Krunch {
 
     fn handle_resource_creation_result<T>(result: kube::Result<T, Error>) -> Result<()> {
         match result {
-            Ok(_) => println!("done"),
+            Ok(_) => println!("success"),
             Err(Error::Api(inner)) => {
                 if inner.reason == "AlreadyExists" {
-                    println!("already exists");
+                    println!("already done");
                 }
             }
             Err(err) => {
