@@ -14,7 +14,7 @@ pub enum Binary {
 }
 
 impl Krunch {
-    //todo: error handling in calles, remmeber minikube
+    //todo: error handling in commandos, remember minikube
     pub async fn execute_command(binary: Binary, args: &str) -> Result<(String, String, i32)> {
         let extension = if cfg!(target_os = "windows") {
             ".exe"
