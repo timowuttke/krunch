@@ -61,10 +61,19 @@ impl Krunch {
     }
 
     fn handle_tmp_file(tmp_file_path: PathBuf, target_name: &str) -> Result<()> {
-        let bin_folder = Self::get_bin_folder()?;
-        fs::create_dir_all(&bin_folder)?;
+        let target_path;
 
-        let target_path = format!("{}/{}", bin_folder, target_name);
+        if target_name.starts_with("docker-buildx") {
+            let buildx_folder = Self::get_buildx_folder()?;
+            fs::create_dir_all(&buildx_folder)?;
+
+            target_path = format!("{}/{}", buildx_folder, target_name);
+        } else {
+            let bin_folder = Self::get_bin_folder()?;
+            fs::create_dir_all(&bin_folder)?;
+
+            target_path = format!("{}/{}", bin_folder, target_name);
+        }
 
         if tmp_file_path.to_str().unwrap().ends_with(".tar.gz")
             || tmp_file_path.to_str().unwrap().ends_with(".tgz")
@@ -114,6 +123,13 @@ impl Krunch {
         return match home::home_dir() {
             None => return Err(anyhow!("failed to detect home directory")),
             Some(inner) => Ok(format!("{}/.krunch/bin", inner.display())),
+        };
+    }
+
+    pub fn get_buildx_folder() -> Result<String> {
+        return match home::home_dir() {
+            None => return Err(anyhow!("failed to detect home directory")),
+            Some(inner) => Ok(format!("{}/.docker/cli-plugins", inner.display())),
         };
     }
 

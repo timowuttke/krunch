@@ -7,6 +7,7 @@ const MKCERT_VERSION: &str = "1.4.4";
 const SKAFFOLD_VERSION: &str = "2.3.1";
 const K9S_VERSION: &str = "0.27.3";
 const DOCKER_VERSION: &str = "23.0.4";
+const BUILDX_VERSION: &str = "0.10.4";
 
 pub struct Download {
     pub target: String,
@@ -55,6 +56,11 @@ impl Krunch {
             source: Self::get_docker_url(&os, &arch, DOCKER_VERSION),
         };
 
+        let buildx = Download {
+            target: format!("docker-buildx{}", ext_str),
+            source: Self::get_buildx_url(&os, &arch, BUILDX_VERSION),
+        };
+
         let kubectl = Download {
             target: format!("kubectl{}", ext_str),
             source: Self::get_kubectl_url(&os, &arch, KUBECTL_VERSION),
@@ -80,7 +86,7 @@ impl Krunch {
             source: Self::get_k9s_url(&os, &arch, K9S_VERSION),
         };
 
-        vec![docker, kubectl, helm, mkcert, skaffold, k9s]
+        vec![docker, buildx, kubectl, helm, mkcert, skaffold, k9s]
     }
 
     fn get_docker_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
@@ -223,6 +229,31 @@ impl Krunch {
         return Url::parse(&*format!(
             "https://github.com/derailed/k9s/releases/download/v{}/k9s_{}_{}{}",
             version, os_str, arch_str, ext
+        ))
+        .expect("failed to parse URL");
+    }
+
+    fn get_buildx_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+        let os_str = match os {
+            TargetOs::Windows => "windows",
+            TargetOs::MacOs => "darwin",
+            TargetOs::Linux => "linux",
+        };
+
+        let ext = match os {
+            TargetOs::Windows => ".exe",
+            TargetOs::MacOs => "",
+            TargetOs::Linux => "",
+        };
+
+        let arch_str = match arch {
+            TargetArch::Amd64 => "amd64",
+            TargetArch::Arm64 => "arm64",
+        };
+
+        return Url::parse(&*format!(
+            "https://github.com/docker/buildx/releases/download/v{}/buildx-v{}.{}-{}{}",
+            version, version, os_str, arch_str, ext
         ))
         .expect("failed to parse URL");
     }
