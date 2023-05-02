@@ -23,7 +23,18 @@ impl Krunch {
             print!("downloading {:<18}", &download.target);
             io::stdout().flush().unwrap();
 
-            if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target)).exists() {
+            if download.target.starts_with("docker-buildx")
+                && Path::new(&format!(
+                    "{}/{}",
+                    Self::get_buildx_folder()?,
+                    download.target
+                ))
+                .exists()
+            {
+                println!("already done")
+            } else if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target))
+                .exists()
+            {
                 println!("already done")
             } else {
                 Self::download_file(download.source, download.target.as_str()).await?;
@@ -35,6 +46,13 @@ impl Krunch {
         io::stdout().flush().unwrap();
 
         if let Err(_) = Self::add_bin_folder_to_path().await {
+            println!("failed, continuing without")
+        }
+
+        print!("{:30}", "point docker cli to minikube");
+        io::stdout().flush().unwrap();
+
+        if let Err(_) = Self::point_docker_to_minikube().await {
             println!("failed, continuing without")
         }
 
@@ -132,6 +150,49 @@ impl Krunch {
         };
     }
 
+    // todo: move below function into an "environment.rs" mod
+    pub async fn point_docker_to_minikube() -> Result<()> {
+        if cfg!(target_family = "unix") {
+            let profile = format!("{}/.profile", home::home_dir().unwrap().display());
+
+            let mut file = OpenOptions::new()
+                .read(true)
+                .write(true)
+                .append(true)
+                .open(&profile)?;
+
+            //todo: echo $PATH
+            let reader = BufReader::new(&file);
+            let mut already_exists = false;
+            for line in reader.lines() {
+                if line?.contains("# export DOCKER_HOST") {
+                    already_exists = true;
+                    break;
+                }
+            }
+
+            if already_exists {
+                println!("already done");
+            } else {
+                let docker_env = Self::execute_command(Binary::None, "minikube docker-env")
+                    .await?
+                    .0;
+
+                for line in docker_env.lines() {
+                    if line.starts_with("export") {
+                        writeln!(file, "{}", line)?;
+                    }
+                }
+
+                writeln!(file, "# krunch end")?;
+
+                println!("success");
+            }
+        };
+
+        Ok(())
+    }
+
     pub async fn add_bin_folder_to_path() -> Result<()> {
         if cfg!(target_family = "unix") {
             let profile = format!("{}/.profile", home::home_dir().unwrap().display());
@@ -146,7 +207,7 @@ impl Krunch {
             let reader = BufReader::new(&file);
             let mut already_exists = false;
             for line in reader.lines() {
-                if line?.contains("#krunch") {
+                if line?.contains("# krunch start") {
                     already_exists = true;
                     break;
                 }
@@ -155,7 +216,8 @@ impl Krunch {
             if already_exists {
                 println!("already done");
             } else {
-                writeln!(file, "\n#krunch\nexport PATH=\"$HOME/.krunch/bin:$PATH\"",)?;
+                writeln!(file, "\n# krunch start")?;
+                writeln!(file, "export PATH=\"$HOME/.krunch/bin:$PATH\"")?;
                 println!("success");
             }
         };
@@ -183,7 +245,7 @@ impl Krunch {
                     .arg("/t")
                     .arg("REG_SZ")
                     .arg("/d")
-                    .arg(format!("{}", new_path))
+                    .arg(new_path)
                     .arg("/f")
                     .output()
                     .await
