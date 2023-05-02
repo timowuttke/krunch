@@ -26,8 +26,7 @@ impl Krunch {
             if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target)).exists() {
                 println!("already done")
             } else {
-                Self::download_file_to_bin_folder(download.source, download.target.as_str())
-                    .await?;
+                Self::download_file(download.source, download.target.as_str()).await?;
                 println!("success")
             }
         }
@@ -42,7 +41,7 @@ impl Krunch {
         Ok(())
     }
 
-    async fn download_file_to_bin_folder(url: Url, target_name: &str) -> Result<()> {
+    async fn download_file(url: Url, target_name: &str) -> Result<()> {
         let tmp_dir = Builder::new().tempdir()?;
         let tmp_file_name = url.path_segments().unwrap().last().unwrap();
         let tmp_file_path = tmp_dir.path().join(tmp_file_name);
