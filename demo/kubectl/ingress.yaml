@@ -9,7 +9,7 @@ spec:
   tls:
     - hosts:
         - k8s.local
-      secretName: tls-by-krunch
+      secretName: tls
   rules:
     - host: k8s.local
       http:
