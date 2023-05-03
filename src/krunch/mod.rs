@@ -1,5 +1,5 @@
 mod commands;
-mod download;
+mod downloads;
 mod k8s;
 mod mkcert;
 mod urls;

@@ -1,9 +1,14 @@
 use crate::Krunch;
 use anyhow::{anyhow, Result};
-use std::fs::OpenOptions;
+use base64::engine::general_purpose;
+use base64::Engine;
+use std::fs;
+use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
 use tokio::process::Command;
+
+const MKCERT_HOST: &'static str = "k8s.local";
 
 pub enum Binary {
     _Docker,
@@ -177,5 +182,48 @@ impl Krunch {
         }
 
         Ok(())
+    }
+
+    pub async fn install_local_ca() -> Result<()> {
+        match Krunch::execute_command(Binary::Mkcert, "--install").await {
+            Ok((_, stderr, status)) => {
+                if status != 0 {
+                    return Err(anyhow!("mkcert install failed with: {}", stderr));
+                }
+            }
+            Err(err) => {
+                return Err(anyhow!("mkcert install failed with: {}", err));
+            }
+        };
+
+        Ok(())
+    }
+
+    pub async fn create_certificate() -> Result<(String, String)> {
+        match Krunch::execute_command(Binary::Mkcert, MKCERT_HOST).await {
+            Ok((_, stderr, status)) => {
+                if status != 0 {
+                    return Err(anyhow!("mkcert cert creation failed with: {}", stderr));
+                }
+            }
+            Err(err) => {
+                return Err(anyhow!("mkcert cert creation failed with: {}", err));
+            }
+        };
+
+        let mut file = File::open(format!("{}.pem", MKCERT_HOST))?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let tls_crt = general_purpose::STANDARD.encode(contents);
+
+        let mut file = File::open(format!("{}-key.pem", MKCERT_HOST))?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let tls_key = general_purpose::STANDARD.encode(contents);
+
+        fs::remove_file(format!("{}-key.pem", MKCERT_HOST)).unwrap_or(());
+        fs::remove_file(format!("{}.pem", MKCERT_HOST)).unwrap_or(());
+
+        Ok((tls_crt, tls_key))
     }
 }
