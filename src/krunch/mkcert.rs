@@ -1,4 +1,4 @@
-use crate::krunch::command::Binary;
+use crate::krunch::commands::Binary;
 use crate::Krunch;
 use anyhow::{anyhow, Error, Result};
 use base64::engine::general_purpose;

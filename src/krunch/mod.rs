@@ -1,10 +1,11 @@
-use anyhow::{anyhow, Result};
-use kube::Client;
-
-// mod bomb;
-pub mod command;
+mod commands;
+mod download;
 mod init;
 mod mkcert;
+mod urls;
+
+use anyhow::{anyhow, Result};
+use kube::Client;
 
 const TLS_SECRET: &'static str = "tls";
 

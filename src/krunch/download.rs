@@ -1,6 +1,4 @@
-mod urls;
-
-use crate::krunch::command::Binary;
+use crate::krunch::commands::Binary;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;

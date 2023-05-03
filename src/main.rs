@@ -2,7 +2,6 @@ use crate::krunch::Krunch;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-mod downloads;
 mod krunch;
 
 #[derive(Parser)]

@@ -1,4 +1,4 @@
-use crate::krunch::command::Binary;
+use crate::krunch::commands::Binary;
 use crate::krunch::TLS_SECRET;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
