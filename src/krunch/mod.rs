@@ -1,6 +1,6 @@
 mod commands;
 mod download;
-mod init;
+mod k8s;
 mod mkcert;
 mod urls;
 
