@@ -1,15 +1,18 @@
-use crate::krunch::commands::Binary;
+use crate::krunch::commands::MINIKUBE_HOST;
 use crate::krunch::TLS_SECRET;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
+use base64::engine::general_purpose;
+use base64::Engine;
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
     api::{Api, PostParams},
     Error,
 };
 use serde_json::Value;
-use std::io;
-use std::io::Write;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::{fs, io};
 
 impl Krunch {
     pub async fn init(&self) -> Result<()> {
@@ -27,23 +30,34 @@ impl Krunch {
     }
 
     async fn enabling_ingress_addon(&self) -> Result<()> {
-        let status: Value = serde_json::from_str(
-            &*Krunch::execute_command(Binary::Minikube, "addons list --output json")
-                .await?
-                .0,
-        )?;
+        let status: Value = Self::get_minikbe_addons()?;
 
         if status["ingress"]["Status"] == "enabled" {
             println!("already done")
         } else {
-            Krunch::execute_command(Binary::Minikube, "addons enable ingress").await?;
+            Self::enable_minikube_ingress_addon()?;
             println!("success")
         }
 
         Ok(())
     }
 
-    pub async fn install_tls_secret(&self, tls_crt: String, tls_key: String) -> Result<()> {
+    pub async fn install_tls_secret(&self) -> Result<()> {
+        Self::create_certificate_files()?;
+
+        let mut file = File::open(format!("{}.pem", MINIKUBE_HOST))?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let tls_crt = general_purpose::STANDARD.encode(contents);
+
+        let mut file = File::open(format!("{}-key.pem", MINIKUBE_HOST))?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let tls_key = general_purpose::STANDARD.encode(contents);
+
+        fs::remove_file(format!("{}-key.pem", MINIKUBE_HOST)).unwrap_or(());
+        fs::remove_file(format!("{}.pem", MINIKUBE_HOST)).unwrap_or(());
+
         let secrets: Api<Secret> = Api::namespaced(self.client.clone(), "default");
 
         let secret: Secret = serde_json::from_value(serde_json::json!({

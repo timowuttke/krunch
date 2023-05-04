@@ -1,16 +1,16 @@
 use crate::Krunch;
 use anyhow::{anyhow, Result};
-use base64::engine::general_purpose;
-use base64::Engine;
-use std::fs;
-use std::fs::{File, OpenOptions};
+use serde_json::Value;
+use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader};
-use tokio::process::Command;
+use std::path::PathBuf;
+use std::process::Command;
+use std::process::Output;
 
-const MKCERT_HOST: &'static str = "k8s.local";
+pub const MINIKUBE_HOST: &'static str = "k8s.local";
 
-pub enum Binary {
+enum Binary {
     _Docker,
     _Kubectl,
     _Helm,
@@ -18,54 +18,9 @@ pub enum Binary {
     _K9S,
     Mkcert,
     Minikube,
-    None,
 }
 
 impl Krunch {
-    //todo: error handling in commandos, remember minikube
-    pub async fn execute_command(binary: Binary, args: &str) -> Result<(String, String, i32)> {
-        let extension = if cfg!(target_os = "windows") {
-            ".exe"
-        } else {
-            ""
-        };
-
-        let bin = match binary {
-            Binary::_Docker => format!("{}/docker{}", Self::get_bin_folder()?, extension),
-            Binary::_Kubectl => format!("{}/kubectl{}", Self::get_bin_folder()?, extension),
-            Binary::_Helm => format!("{}/helm{}", Self::get_bin_folder()?, extension),
-            Binary::_Skaffold => format!("{}/skaffold{}", Self::get_bin_folder()?, extension),
-            Binary::_K9S => format!("{}/k9s{}", Self::get_bin_folder()?, extension),
-            Binary::Mkcert => format!("{}/mkcert{}", Self::get_bin_folder()?, extension),
-            Binary::Minikube => "minikube".to_string(),
-            Binary::None => "".to_string(),
-        };
-
-        let command = format!("{} {}", bin, args);
-
-        let output = if cfg!(target_os = "windows") {
-            Command::new("cmd")
-                .arg("-/C")
-                .arg(command)
-                .output()
-                .await
-                .expect("failed to execute process")
-        } else {
-            Command::new("sh")
-                .arg("-c")
-                .arg(command)
-                .output()
-                .await
-                .expect("failed to execute process")
-        };
-
-        Ok((
-            String::from_utf8(output.stdout)?,
-            String::from_utf8(output.stderr)?,
-            output.status.code().unwrap(),
-        ))
-    }
-
     // todo: move below function into an "environment.rs" mod
     pub async fn point_docker_to_minikube() -> Result<()> {
         if cfg!(target_family = "unix") {
@@ -81,7 +36,7 @@ impl Krunch {
             let reader = BufReader::new(&file);
             let mut already_exists = false;
             for line in reader.lines() {
-                if line?.contains("# export DOCKER_HOST") {
+                if line?.contains("export DOCKER_HOST") {
                     already_exists = true;
                     break;
                 }
@@ -90,10 +45,7 @@ impl Krunch {
             if already_exists {
                 println!("already done");
             } else {
-                let docker_env = Self::execute_command(Binary::None, "minikube docker-env")
-                    .await?
-                    .0;
-
+                let docker_env = Self::get_docker_env()?;
                 for line in docker_env.lines() {
                     if line.starts_with("export") {
                         writeln!(file, "{}", line)?;
@@ -139,8 +91,7 @@ impl Krunch {
         };
 
         if cfg!(target_os = "windows") {
-            let tmp = Self::execute_command(Binary::None, "echo %PATH%").await?.0;
-            let current_path = tmp.trim();
+            let current_path = Self::get_windows_path_variable()?;
 
             //todo: use PathBuff
             let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
@@ -149,33 +100,8 @@ impl Krunch {
                 println!("already done");
             } else {
                 let divider = if current_path.ends_with(";") { "" } else { ";" };
-
                 let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
-
-                //todo: rethink command architecture
-                let write_reg_result = Command::new("reg")
-                    .arg("add")
-                    .arg("HKEY_CURRENT_USER\\Environment")
-                    .arg("/v")
-                    .arg("Path")
-                    .arg("/t")
-                    .arg("REG_SZ")
-                    .arg("/d")
-                    .arg(new_path)
-                    .arg("/f")
-                    .output()
-                    .await
-                    .expect("failed to execute process");
-
-                let update_env_result =
-                    Self::execute_command(Binary::None, "SETX USERNAME %USERNAME%").await?;
-
-                if !write_reg_result.status.success() || update_env_result.2 != 0 {
-                    return Err(anyhow!(
-                        "failed to add bin folder to PATH: {}",
-                        String::from_utf8(write_reg_result.stderr)?
-                    ));
-                }
+                Self::write_to_windows_environment("Path", new_path)?;
 
                 println!("success");
             }
@@ -184,46 +110,151 @@ impl Krunch {
         Ok(())
     }
 
-    pub async fn install_local_ca() -> Result<()> {
-        match Krunch::execute_command(Binary::Mkcert, "--install").await {
-            Ok((_, stderr, status)) => {
-                if status != 0 {
-                    return Err(anyhow!("mkcert install failed with: {}", stderr));
-                }
-            }
-            Err(err) => {
-                return Err(anyhow!("mkcert install failed with: {}", err));
-            }
-        };
+    pub fn get_docker_env() -> Result<String> {
+        let output = Command::new(Self::get_binary_path(Binary::Minikube)?)
+            .arg("docker-env")
+            .output()
+            .expect("failed to execute process");
+
+        let docker_env = Self::get_stdout_and_handle_errors(output)?;
+
+        Ok(docker_env)
+    }
+
+    pub fn enable_minikube_ingress_addon() -> Result<()> {
+        let output = Command::new(Self::get_binary_path(Binary::Minikube)?)
+            .arg("addons")
+            .arg("enable")
+            .arg("ingress")
+            .output()
+            .expect("failed to execute process");
+
+        Self::get_stdout_and_handle_errors(output)?;
 
         Ok(())
     }
 
-    pub async fn create_certificate() -> Result<(String, String)> {
-        match Krunch::execute_command(Binary::Mkcert, MKCERT_HOST).await {
-            Ok((_, stderr, status)) => {
-                if status != 0 {
-                    return Err(anyhow!("mkcert cert creation failed with: {}", stderr));
-                }
-            }
-            Err(err) => {
-                return Err(anyhow!("mkcert cert creation failed with: {}", err));
-            }
+    pub fn get_minikbe_addons() -> Result<Value> {
+        let output = Command::new(Self::get_binary_path(Binary::Minikube)?)
+            .arg("addons")
+            .arg("list")
+            .arg("--output")
+            .arg("json")
+            .output()
+            .expect("failed to execute process");
+
+        let value: Value = serde_json::from_str(&*Self::get_stdout_and_handle_errors(output)?)?;
+
+        Ok(value)
+    }
+
+    pub fn write_to_windows_environment(key: &str, value: String) -> Result<()> {
+        let output = Command::new("reg")
+            .arg("add")
+            .arg("HKEY_CURRENT_USER\\Environment")
+            .arg("/v")
+            .arg(key)
+            .arg("/t")
+            .arg("REG_SZ")
+            .arg("/d")
+            .arg(value)
+            .arg("/f")
+            .output()
+            .expect("failed to execute process");
+
+        Self::get_stdout_and_handle_errors(output)?;
+
+        Ok(())
+    }
+
+    pub fn get_windows_path_variable() -> Result<String> {
+        let output = Command::new("echo")
+            .arg("%PATH%")
+            .output()
+            .expect("failed to execute process");
+
+        let tmp = Self::get_stdout_and_handle_errors(output)?;
+
+        Ok(tmp.trim().to_string())
+    }
+
+    pub fn install_local_ca() -> Result<()> {
+        let output = Command::new(Self::get_binary_path(Binary::Mkcert)?)
+            .arg("--install")
+            .output()
+            .expect("failed to execute process");
+
+        Self::get_stdout_and_handle_errors(output)?;
+
+        Ok(())
+    }
+
+    pub fn create_certificate_files() -> Result<()> {
+        let output = Command::new(Self::get_binary_path(Binary::Mkcert)?)
+            .arg(MINIKUBE_HOST)
+            .output()
+            .expect("failed to execute process");
+
+        Self::get_stdout_and_handle_errors(output)?;
+
+        Ok(())
+    }
+
+    fn get_stdout_and_handle_errors(output: Output) -> Result<String> {
+        let stdout = String::from_utf8(output.stdout.to_vec())?;
+        let stdout = stdout.trim().to_string();
+
+        let stderr = String::from_utf8(output.stderr.to_vec())?;
+        let stderr = stderr.trim().to_string();
+
+        if !output.status.success() {
+            return if !stderr.is_empty() {
+                Err(anyhow!(stderr))
+            } else if !stdout.is_empty() {
+                Err(anyhow!(stdout))
+            } else {
+                Err(anyhow!("command failed without output"))
+            };
+        }
+
+        Ok(stdout)
+    }
+
+    fn get_binary_path(binary: Binary) -> Result<PathBuf> {
+        let extension = if cfg!(target_os = "windows") {
+            ".exe"
+        } else {
+            ""
         };
 
-        let mut file = File::open(format!("{}.pem", MKCERT_HOST))?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let tls_crt = general_purpose::STANDARD.encode(contents);
+        let path = match binary {
+            Binary::_Docker => {
+                let path_str = format!("{}/docker{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::_Kubectl => {
+                let path_str = format!("{}/kubectl{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::_Helm => {
+                let path_str = format!("{}/helm{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::_Skaffold => {
+                let path_str = format!("{}/skaffold{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::_K9S => {
+                let path_str = format!("{}/k9s{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::Mkcert => {
+                let path_str = format!("{}/mkcert{}", Self::get_bin_folder()?, extension);
+                PathBuf::from(path_str)
+            }
+            Binary::Minikube => PathBuf::from("minikube"),
+        };
 
-        let mut file = File::open(format!("{}-key.pem", MKCERT_HOST))?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let tls_key = general_purpose::STANDARD.encode(contents);
-
-        fs::remove_file(format!("{}-key.pem", MKCERT_HOST)).unwrap_or(());
-        fs::remove_file(format!("{}.pem", MKCERT_HOST)).unwrap_or(());
-
-        Ok((tls_crt, tls_key))
+        Ok(path)
     }
 }
