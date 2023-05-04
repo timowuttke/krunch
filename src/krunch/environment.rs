@@ -5,50 +5,55 @@ use std::io::prelude::*;
 use std::io::BufReader;
 
 impl Krunch {
+    #[cfg(target_family = "unix")]
     pub async fn add_bin_folder_to_path() -> Result<()> {
-        if cfg!(target_family = "unix") {
-            let profile = format!("{}/.profile", home::home_dir().unwrap().display());
+        let mut profile_path = home::home_dir().unwrap();
+        // todo: check for different shell variants, e.g. fn get_unix_file_for_path
+        profile_path.push(".profile");
 
-            let mut file = OpenOptions::new()
-                .read(true)
-                .write(true)
-                .append(true)
-                .open(&profile)?;
+        let mut profile = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .append(true)
+            .open(&profile_path)?;
 
-            //todo: echo $PATH
-            let reader = BufReader::new(&file);
-            let mut already_exists = false;
-            for line in reader.lines() {
-                if line?.contains("# krunch start") {
-                    already_exists = true;
-                    break;
-                }
+        let reader = BufReader::new(&profile);
+        let mut already_exists = false;
+        let bin_folder = Self::get_bin_folder()?;
+        for line in reader.lines() {
+            let line = line?;
+            if line.contains(&bin_folder) {
+                already_exists = true;
+                break;
             }
+        }
 
-            if already_exists {
-                println!("already done");
-            } else {
-                writeln!(file, "\n# krunch start")?;
-                writeln!(file, "export PATH=\"$HOME/.krunch/bin:$PATH\"")?;
-                println!("success");
-            }
-        };
+        if already_exists {
+            println!("already done");
+        } else {
+            writeln!(profile, "\n# krunch")?;
+            writeln!(profile, "export PATH=\"{}:$PATH\"", bin_folder)?;
+            println!("success");
+        }
 
-        if cfg!(target_os = "windows") {
-            let current_path = Self::get_windows_path_variable()?;
+        Ok(())
+    }
 
-            //todo: use PathBuff
-            let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
+    #[cfg(target_family = "windows")]
+    pub async fn add_bin_folder_to_path() -> Result<()> {
+        let current_path = Self::get_path_variable()?;
 
-            if current_path.contains(&win_bin_folder) {
-                println!("already done");
-            } else {
-                let divider = if current_path.ends_with(";") { "" } else { ";" };
-                let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
-                Self::write_to_windows_environment("Path", new_path)?;
+        //todo: use PathBuff
+        let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
 
-                println!("success");
-            }
+        if current_path.contains(&win_bin_folder) {
+            println!("already done");
+        } else {
+            let divider = if current_path.ends_with(";") { "" } else { ";" };
+            let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
+            Self::write_to_windows_environment("Path", new_path)?;
+
+            println!("success");
         }
 
         Ok(())
@@ -82,8 +87,6 @@ impl Krunch {
                         writeln!(file, "{}", line)?;
                     }
                 }
-
-                writeln!(file, "# krunch end")?;
 
                 println!("success");
             }

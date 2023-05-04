@@ -1,9 +1,6 @@
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use serde_json::Value;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Output;
@@ -59,7 +56,8 @@ impl Krunch {
         Ok(value)
     }
 
-    pub fn write_to_windows_environment(key: &str, value: String) -> Result<()> {
+    #[cfg(target_family = "windows")]
+    pub fn write_to_environment(key: &str, value: String) -> Result<()> {
         let output = Command::new("reg")
             .arg("add")
             .arg("HKEY_CURRENT_USER\\Environment")
@@ -78,7 +76,8 @@ impl Krunch {
         Ok(())
     }
 
-    pub fn get_windows_path_variable() -> Result<String> {
+    #[cfg(target_family = "windows")]
+    pub fn get_path_variable() -> Result<String> {
         let output = Command::new("echo")
             .arg("%PATH%")
             .output()
