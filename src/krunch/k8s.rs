@@ -20,7 +20,8 @@ impl Krunch {
 
         print!("{:<30}", "creating TLS secret");
         io::stdout().flush().unwrap();
-        self.mkcert().await?;
+        Self::install_local_ca()?;
+        self.install_tls_secret().await?;
 
         print!("{:<30}", "enabling ingress addon");
         io::stdout().flush().unwrap();

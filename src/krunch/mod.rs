@@ -1,7 +1,7 @@
 mod commands;
 mod downloads;
+mod environment;
 mod k8s;
-mod mkcert;
 mod urls;
 
 use anyhow::{anyhow, Result};
