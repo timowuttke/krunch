@@ -8,7 +8,7 @@ impl Krunch {
     #[cfg(target_family = "unix")]
     pub async fn add_bin_folder_to_path() -> Result<()> {
         let mut profile_path = home::home_dir().unwrap();
-        // todo: check for different shell variants, e.g. fn get_unix_file_for_path
+        // todo: check for different shell variants, e.g. fn get_unix_file_for_path and make sure file exists
         profile_path.push(".profile");
 
         let mut profile = OpenOptions::new()
@@ -22,7 +22,7 @@ impl Krunch {
         let bin_folder = Self::get_bin_folder()?;
         for line in reader.lines() {
             let line = line?;
-            if line.contains(&bin_folder) {
+            if line.contains(&bin_folder.display().to_string()) {
                 already_exists = true;
                 break;
             }
@@ -32,7 +32,7 @@ impl Krunch {
             println!("already done");
         } else {
             writeln!(profile, "\n# krunch")?;
-            writeln!(profile, "export PATH=\"{}:$PATH\"", bin_folder)?;
+            writeln!(profile, "export PATH=\"{}:$PATH\"", bin_folder.display())?;
             println!("success");
         }
 
@@ -43,15 +43,14 @@ impl Krunch {
     pub async fn add_bin_folder_to_path() -> Result<()> {
         let current_path = Self::get_path_variable()?;
 
-        //todo: use PathBuff
-        let win_bin_folder = Self::get_bin_folder()?.replace("/", "\\");
+        let bin_folder = Self::get_bin_folder()?.display().to_string();
 
-        if current_path.contains(&win_bin_folder) {
+        if current_path.contains(&bin_folder) {
             println!("already done");
         } else {
             let divider = if current_path.ends_with(";") { "" } else { ";" };
-            let new_path = format!("{}{}{};", current_path, divider, win_bin_folder);
-            Self::write_to_windows_environment("Path", new_path)?;
+            let new_path = format!("{}{}{};", current_path, divider, bin_folder);
+            Self::write_to_environment("Path", new_path)?;
 
             println!("success");
         }

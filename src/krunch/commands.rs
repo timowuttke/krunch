@@ -138,30 +138,12 @@ impl Krunch {
         };
 
         let path = match binary {
-            Binary::_Docker => {
-                let path_str = format!("{}/docker{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
-            Binary::_Kubectl => {
-                let path_str = format!("{}/kubectl{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
-            Binary::_Helm => {
-                let path_str = format!("{}/helm{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
-            Binary::_Skaffold => {
-                let path_str = format!("{}/skaffold{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
-            Binary::_K9S => {
-                let path_str = format!("{}/k9s{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
-            Binary::Mkcert => {
-                let path_str = format!("{}/mkcert{}", Self::get_bin_folder()?, extension);
-                PathBuf::from(path_str)
-            }
+            Binary::_Docker => Self::get_bin_folder()?.join(format!("docker{}", extension)),
+            Binary::_Kubectl => Self::get_bin_folder()?.join(format!("kubectl{}", extension)),
+            Binary::_Helm => Self::get_bin_folder()?.join(format!("helm{}", extension)),
+            Binary::_Skaffold => Self::get_bin_folder()?.join(format!("skaffold{}", extension)),
+            Binary::_K9S => Self::get_bin_folder()?.join(format!("k9s{}", extension)),
+            Binary::Mkcert => Self::get_bin_folder()?.join(format!("mkcert{}", extension)),
             Binary::Minikube => PathBuf::from("minikube"),
         };
 

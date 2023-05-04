@@ -5,7 +5,7 @@ use reqwest::Url;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{copy, Cursor};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::{fs, io};
 use tar::Archive;
 use tempfile::{Builder, TempDir};
@@ -20,17 +20,10 @@ impl Krunch {
             io::stdout().flush().unwrap();
 
             if download.target.starts_with("docker-buildx")
-                && Path::new(&format!(
-                    "{}/{}",
-                    Self::get_buildx_folder()?,
-                    download.target
-                ))
-                .exists()
+                && Self::get_buildx_folder()?.join(&download.target).exists()
             {
                 println!("already done")
-            } else if Path::new(&format!("{}/{}", Self::get_bin_folder()?, download.target))
-                .exists()
-            {
+            } else if Self::get_bin_folder()?.join(&download.target).exists() {
                 println!("already done")
             } else {
                 Self::download_file(download.source, download.target.as_str()).await?;
@@ -81,12 +74,12 @@ impl Krunch {
             let buildx_folder = Self::get_buildx_folder()?;
             fs::create_dir_all(&buildx_folder)?;
 
-            target_path = format!("{}/{}", buildx_folder, target_name);
+            target_path = buildx_folder.join(target_name);
         } else {
             let bin_folder = Self::get_bin_folder()?;
             fs::create_dir_all(&bin_folder)?;
 
-            target_path = format!("{}/{}", bin_folder, target_name);
+            target_path = bin_folder.join(target_name);
         }
 
         if tmp_file_path.to_str().unwrap().ends_with(".tar.gz")
@@ -118,7 +111,7 @@ impl Krunch {
     fn find_and_copy_file(
         dir: TempDir,
         to_find: &str,
-        target_path: &String,
+        target_path: &PathBuf,
     ) -> std::io::Result<()> {
         for file in WalkDir::new(dir.path())
             .into_iter()
@@ -133,17 +126,17 @@ impl Krunch {
         Ok(())
     }
 
-    pub fn get_bin_folder() -> Result<String> {
+    pub fn get_bin_folder() -> Result<PathBuf> {
         return match home::home_dir() {
             None => return Err(anyhow!("failed to detect home directory")),
-            Some(inner) => Ok(format!("{}/.krunch/bin", inner.display())),
+            Some(inner) => Ok(inner.join(".krunch/bin")),
         };
     }
 
-    pub fn get_buildx_folder() -> Result<String> {
+    pub fn get_buildx_folder() -> Result<PathBuf> {
         return match home::home_dir() {
             None => return Err(anyhow!("failed to detect home directory")),
-            Some(inner) => Ok(format!("{}/.docker/cli-plugins", inner.display())),
+            Some(inner) => Ok(inner.join(".docker/cli-plugins")),
         };
     }
 }
