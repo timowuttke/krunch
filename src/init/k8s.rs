@@ -1,5 +1,4 @@
-use crate::krunch::commands::MINIKUBE_HOST;
-use crate::krunch::TLS_SECRET;
+use crate::krunch::{MINIKUBE_HOST, TLS_SECRET};
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
@@ -10,28 +9,12 @@ use kube::{
     Error,
 };
 use serde_json::Value;
+use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
-use std::{fs, io};
+use std::io::Read;
 
 impl Krunch {
-    //todo: move somewhere else
-    pub async fn init(&self) -> Result<()> {
-        Krunch::download_all().await?;
-
-        print!("{:<30}", "creating TLS secret");
-        io::stdout().flush().unwrap();
-        Self::install_local_ca()?;
-        self.install_tls_secret().await?;
-
-        print!("{:<30}", "enabling ingress addon");
-        io::stdout().flush().unwrap();
-        self.enabling_ingress_addon().await?;
-
-        Ok(())
-    }
-
-    async fn enabling_ingress_addon(&self) -> Result<()> {
+    pub fn enabling_ingress_addon(&self) -> Result<()> {
         let status: Value = Self::get_minikbe_addons()?;
 
         if status["ingress"]["Status"] == "enabled" {

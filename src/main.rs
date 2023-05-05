@@ -2,6 +2,7 @@ use crate::krunch::Krunch;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
+mod init;
 mod krunch;
 
 #[derive(Parser)]

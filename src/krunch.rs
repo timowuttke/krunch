@@ -1,16 +1,11 @@
-mod commands;
-mod downloads;
-mod environment;
-mod k8s;
-mod urls;
-
 use anyhow::{anyhow, Result};
 use kube::Client;
 
-const TLS_SECRET: &'static str = "tls";
+pub const MINIKUBE_HOST: &'static str = "k8s.local";
+pub const TLS_SECRET: &'static str = "tls";
 
 pub struct Krunch {
-    client: Client,
+    pub client: Client,
 }
 
 impl Krunch {

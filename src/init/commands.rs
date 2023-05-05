@@ -1,11 +1,10 @@
+use crate::krunch::MINIKUBE_HOST;
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use serde_json::Value;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Output;
-
-pub const MINIKUBE_HOST: &'static str = "k8s.local";
 
 enum Binary {
     _Docker,

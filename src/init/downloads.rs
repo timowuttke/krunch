@@ -34,21 +34,6 @@ impl Krunch {
             }
         }
 
-        // todo: call these functions somewhere else
-        print!("{:30}", "adding tools to PATH");
-        io::stdout().flush().unwrap();
-
-        if let Err(err) = Self::add_bin_folder_to_path().await {
-            println!("failed: {}", err)
-        }
-
-        print!("{:30}", "point docker cli to minikube");
-        io::stdout().flush().unwrap();
-
-        if let Err(err) = Self::point_docker_to_minikube().await {
-            println!("failed: {}", err)
-        }
-
         Ok(())
     }
 
