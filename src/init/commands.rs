@@ -71,6 +71,14 @@ pub fn write_to_environment(key: &str, value: String) -> Result<()> {
 
     get_stdout_and_handle_errors(output)?;
 
+    let output = Command::new("SETX")
+        .arg("USERNAME")
+        .arg("%USERNAME%")
+        .output()
+        .expect("failed to execute process");
+
+    get_stdout_and_handle_errors(output)?;
+
     Ok(())
 }
 
