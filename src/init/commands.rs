@@ -93,8 +93,9 @@ pub fn read_from_environment(key: &str) -> Result<String> {
         .expect("failed to execute process");
 
     let tmp = get_stdout_and_handle_errors(output)?;
+    let result = tmp.splitn(2, "C:\\").last().unwrap().trim();
 
-    Ok(tmp.trim().to_string())
+    Ok(result.to_string())
 }
 
 pub fn install_local_ca() -> Result<()> {

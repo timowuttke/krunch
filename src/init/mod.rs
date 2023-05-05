@@ -6,7 +6,7 @@ use anyhow::Result;
 use std::io;
 use std::io::Write;
 
-mod commands;
+pub mod commands;
 mod downloads;
 mod environment;
 mod k8s;
