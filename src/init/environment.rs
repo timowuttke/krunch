@@ -44,7 +44,7 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
     use crate::init::commands::{get_path_variable, write_to_environment};
 
     let current_path = get_path_variable()?;
-    let bin_folder = get_bin_folder()?.display().to_string();
+    let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
 
     if current_path.contains(&bin_folder) {
         println!("already done");
