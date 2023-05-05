@@ -14,6 +14,8 @@ use tempfile::{Builder, TempDir};
 use terminal_size::terminal_size;
 use walkdir::{DirEntry, WalkDir};
 
+// todo: move krunch itself into bin folder
+
 pub async fn download_all() -> Result<()> {
     let downloads = get_downloads();
 
