@@ -13,7 +13,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// download common tools and create local CA to access minikube over https
+    /// create a minikube base dev setup
     Init,
 }
 
