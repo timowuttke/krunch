@@ -59,38 +59,42 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
     Ok(())
 }
 
+#[cfg(target_family = "unix")]
 pub async fn point_docker_to_minikube() -> Result<()> {
-    if cfg!(target_family = "unix") {
-        let profile = format!("{}/.profile", home::home_dir().unwrap().display());
+    let profile = format!("{}/.profile", home::home_dir().unwrap().display());
 
-        let mut file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .append(true)
-            .open(&profile)?;
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .append(true)
+        .open(&profile)?;
 
-        let reader = BufReader::new(&file);
-        let mut already_exists = false;
-        for line in reader.lines() {
-            if line?.contains("export DOCKER_HOST") {
-                already_exists = true;
-                break;
+    let reader = BufReader::new(&file);
+    let mut already_exists = false;
+    for line in reader.lines() {
+        if line?.contains("export DOCKER_HOST") {
+            already_exists = true;
+            break;
+        }
+    }
+
+    if already_exists {
+        println!("already done");
+    } else {
+        let docker_env = get_docker_env()?;
+        for line in docker_env.lines() {
+            if line.starts_with("export") {
+                writeln!(file, "{}", line)?;
             }
         }
 
-        if already_exists {
-            println!("already done");
-        } else {
-            let docker_env = get_docker_env()?;
-            for line in docker_env.lines() {
-                if line.starts_with("export") {
-                    writeln!(file, "{}", line)?;
-                }
-            }
+        println!("success");
+    }
 
-            println!("success");
-        }
-    };
+    Ok(())
+}
 
+#[cfg(target_family = "windows")]
+pub async fn point_docker_to_minikube() -> Result<()> {
     Ok(())
 }
