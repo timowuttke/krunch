@@ -83,10 +83,12 @@ pub fn write_to_environment(key: &str, value: String) -> Result<()> {
 }
 
 #[cfg(target_family = "windows")]
-pub fn get_path_variable() -> Result<String> {
-    let output = Command::new("cmd")
-        .arg("/C")
-        .arg("echo %PATH%")
+pub fn read_from_environment(key: &str) -> Result<String> {
+    let output = Command::new("reg")
+        .arg("query")
+        .arg("HKEY_CURRENT_USER\\Environment")
+        .arg("/v")
+        .arg(key)
         .output()
         .expect("failed to execute process");
 

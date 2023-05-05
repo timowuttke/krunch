@@ -41,9 +41,9 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
 
 #[cfg(target_family = "windows")]
 pub async fn add_bin_folder_to_path() -> Result<()> {
-    use crate::init::commands::{get_path_variable, write_to_environment};
+    use crate::init::commands::{read_from_environment, write_to_environment};
 
-    let current_path = get_path_variable()?;
+    let current_path = read_from_environment("Path")?;
     let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
 
     if current_path.contains(&bin_folder) {
