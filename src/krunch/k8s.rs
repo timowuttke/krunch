@@ -15,6 +15,7 @@ use std::io::{Read, Write};
 use std::{fs, io};
 
 impl Krunch {
+    //todo: move somewhere else
     pub async fn init(&self) -> Result<()> {
         Krunch::download_all().await?;
 

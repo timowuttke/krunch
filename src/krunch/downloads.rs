@@ -1,14 +1,17 @@
 use crate::Krunch;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
+use futures_util::StreamExt;
+use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Url;
+use std::cmp::min;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::{copy, Cursor};
 use std::path::PathBuf;
 use std::{fs, io};
 use tar::Archive;
 use tempfile::{Builder, TempDir};
+use terminal_size::terminal_size;
 use walkdir::{DirEntry, WalkDir};
 
 impl Krunch {
@@ -27,7 +30,7 @@ impl Krunch {
                 println!("already done")
             } else {
                 Self::download_file(download.source, download.target.as_str()).await?;
-                println!("success")
+                println!("\rdownloading {:<18}success", &download.target);
             }
         }
 
@@ -55,9 +58,22 @@ impl Krunch {
         let tmp_file_path = tmp_dir.path().join(tmp_file_name);
         let mut tmp_file = File::create(&tmp_file_path)?;
 
-        let response = reqwest::get(url).await?;
-        let mut content = Cursor::new(response.bytes().await?);
-        copy(&mut content, &mut tmp_file)?;
+        let response = reqwest::get(url.clone()).await?;
+        let total_size = response
+            .content_length()
+            .ok_or(anyhow!("failed to get content length from '{}'", &url))?;
+        let pb = Self::get_progress_bar(total_size, target_name);
+
+        let mut downloaded: u64 = 0;
+        let mut stream = response.bytes_stream();
+
+        while let Some(item) = stream.next().await {
+            let chunk = item?;
+            tmp_file.write_all(&chunk)?;
+            let new = min(downloaded + (chunk.len() as u64), total_size);
+            downloaded = new;
+            pb.set_position(new);
+        }
 
         Self::handle_tmp_file(tmp_file_path, target_name)?;
 
@@ -108,11 +124,7 @@ impl Krunch {
         Ok(())
     }
 
-    fn find_and_copy_file(
-        dir: TempDir,
-        to_find: &str,
-        target_path: &PathBuf,
-    ) -> std::io::Result<()> {
+    fn find_and_copy_file(dir: TempDir, to_find: &str, target_path: &PathBuf) -> Result<()> {
         for file in WalkDir::new(dir.path())
             .into_iter()
             .filter_map(Result::ok)
@@ -124,6 +136,26 @@ impl Krunch {
         }
 
         Ok(())
+    }
+
+    fn get_progress_bar(total_size: u64, target_name: &str) -> ProgressBar {
+        let term_width = terminal_size().unwrap().0 .0 as usize;
+
+        let style = match term_width {
+            0..=100 => "\r{msg}{bytes}/{total_bytes}".to_string(),
+            _ => "\r{msg}[{bar:40.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec})".to_string(),
+        };
+
+        let pb = ProgressBar::new(total_size);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template(&style)
+                .progress_chars("#>-"),
+        );
+
+        pb.set_message(&format!("downloading {:<18}", target_name));
+
+        pb
     }
 
     pub fn get_bin_folder() -> Result<PathBuf> {
