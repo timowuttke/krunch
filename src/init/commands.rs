@@ -76,8 +76,9 @@ pub fn write_to_environment(key: &str, value: String) -> Result<()> {
 
 #[cfg(target_family = "windows")]
 pub fn get_path_variable() -> Result<String> {
-    let output = Command::new("echo")
-        .arg("%PATH%")
+    let output = Command::new("cmd")
+        .arg("/C")
+        .arg("echo %PATH%")
         .output()
         .expect("failed to execute process");
 
