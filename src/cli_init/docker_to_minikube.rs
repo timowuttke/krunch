@@ -1,12 +1,21 @@
-use crate::shared::commands::{get_binary_path, handle_output, Binary};
+use crate::shared::commands::{get_binary_path, handle_output, read_from_environment, Binary};
 use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::process::Command;
 
-#[cfg(target_family = "unix")]
 pub async fn point_docker_to_minikube() -> Result<()> {
+    if cfg!(target_family = "unix") {
+        point_docker_to_minikube_unix()?;
+    } else if cfg!(target_family = "windows") {
+        point_docker_to_minikube_windows()?;
+    }
+
+    Ok(())
+}
+
+fn point_docker_to_minikube_unix() -> Result<()> {
     let profile = format!("{}/.profile", home::home_dir().unwrap().display());
 
     let mut file = OpenOptions::new()
@@ -44,10 +53,7 @@ pub async fn point_docker_to_minikube() -> Result<()> {
     Ok(())
 }
 
-#[cfg(target_family = "windows")]
-pub async fn point_docker_to_minikube() -> Result<()> {
-    use crate::cli_init::create_tls_secret::{handle_output, read_from_environment};
-
+fn point_docker_to_minikube_windows() -> Result<()> {
     let current_docker_tls_verify = read_from_environment("DOCKER_TLS_VERIFY");
 
     if !current_docker_tls_verify.is_err() {

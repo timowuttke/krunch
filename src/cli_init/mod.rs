@@ -19,25 +19,27 @@ pub async fn cli_init() -> Result<()> {
 
     print!("{:30}", "adding tools to PATH");
     io::stdout().flush().unwrap();
-
     if let Err(err) = add_bin_folder_to_path().await {
-        println!("failed: {}", err)
+        println!("{}", err)
     }
 
     print!("{:30}", "point docker cli to minikube");
     io::stdout().flush().unwrap();
-
     if let Err(err) = point_docker_to_minikube().await {
-        println!("failed: {}", err)
+        println!("{}", err)
     }
 
     print!("{:<30}", "creating TLS secret");
     io::stdout().flush().unwrap();
-    create_ca_and_install_tls_in_cluster().await?;
+    if let Err(err) = create_ca_and_install_tls_in_cluster().await {
+        println!("{}", err)
+    };
 
     print!("{:<30}", "enabling ingress addon");
     io::stdout().flush().unwrap();
-    enable_ingress_addon_if_needed()?;
+    if let Err(err) = enable_ingress_addon_if_needed() {
+        println!("{}", err)
+    };
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 use std::path::PathBuf;
-use std::process::Output;
+use std::process::{Command, Output};
 
 pub enum Binary {
     _Docker,
@@ -52,7 +52,6 @@ pub fn get_binary_path(binary: Binary) -> Result<PathBuf> {
     Ok(path)
 }
 
-#[cfg(target_family = "windows")]
 pub fn write_to_environment(key: &str, value: String) -> Result<()> {
     let output = Command::new("reg")
         .arg("add")
@@ -80,7 +79,6 @@ pub fn write_to_environment(key: &str, value: String) -> Result<()> {
     Ok(())
 }
 
-#[cfg(target_family = "windows")]
 pub fn read_from_environment(key: &str) -> Result<String> {
     let output = Command::new("reg")
         .arg("query")

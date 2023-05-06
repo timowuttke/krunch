@@ -1,11 +1,20 @@
-use crate::shared::commands::get_bin_folder;
+use crate::shared::commands::{get_bin_folder, read_from_environment, write_to_environment};
 use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-#[cfg(target_family = "unix")]
 pub async fn add_bin_folder_to_path() -> Result<()> {
+    if cfg!(target_family = "unix") {
+        add_bin_folder_to_path_unix()?;
+    } else if cfg!(target_family = "windows") {
+        add_bin_folder_to_path_windows()?;
+    }
+
+    Ok(())
+}
+
+fn add_bin_folder_to_path_unix() -> Result<()> {
     let mut profile_path = home::home_dir().unwrap();
     // todo: check for different shell variants, e.g. fn get_unix_file_for_path and make sure file exists
     profile_path.push(".profile");
@@ -38,10 +47,7 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
     Ok(())
 }
 
-#[cfg(target_family = "windows")]
-pub async fn add_bin_folder_to_path() -> Result<()> {
-    use crate::cli_init::create_tls_secret::{read_from_environment, write_to_environment};
-
+fn add_bin_folder_to_path_windows() -> Result<()> {
     let current_path = read_from_environment("Path")?;
     let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
 
