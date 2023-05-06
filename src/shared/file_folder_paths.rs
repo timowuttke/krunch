@@ -34,7 +34,7 @@ pub fn get_binary_path(binary: Binary) -> Result<PathBuf> {
 pub fn get_bin_folder() -> Result<PathBuf> {
     return match home::home_dir() {
         None => return Err(anyhow!("failed to detect home directory")),
-        Some(inner) => Ok(inner.join(".krunch/bin")),
+        Some(inner) => Ok(inner.join(".krunch")),
     };
 }
 

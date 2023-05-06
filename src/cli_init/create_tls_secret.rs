@@ -20,6 +20,7 @@ pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
     Ok(())
 }
 
+// todo: admin warning
 fn install_local_ca() -> Result<()> {
     let output = Command::new(get_binary_path(Binary::Mkcert)?)
         .arg("--install")

@@ -14,6 +14,7 @@ pub async fn remove_tls_secret() -> Result<()> {
     Ok(())
 }
 
+// todo: admin warning
 fn remove_local_ca() -> Result<()> {
     let mkcert_path = get_binary_path(Binary::Mkcert)?;
 

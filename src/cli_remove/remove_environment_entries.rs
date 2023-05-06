@@ -37,7 +37,7 @@ fn remove_environment_entries_unix() -> Result<()> {
             && !line.contains("DOCKER_HOST")
             && !line.contains("DOCKER_CERT_PATH")
             && !line.contains("MINIKUBE_ACTIVE_DOCKERD")
-            && !line.contains(".krunch/bin")
+            && !line.contains("/.krunch")
         {
             modified_lines.push(line);
         }
