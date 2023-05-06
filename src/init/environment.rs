@@ -4,6 +4,7 @@ use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::process::Command;
 
 #[cfg(target_family = "unix")]
 pub async fn add_bin_folder_to_path() -> Result<()> {
@@ -81,12 +82,16 @@ pub async fn point_docker_to_minikube() -> Result<()> {
     if already_exists {
         println!("already done");
     } else {
-        let docker_env = get_docker_env()?;
-        for line in docker_env.lines() {
-            if line.starts_with("export") {
-                writeln!(file, "{}", line)?;
-            }
-        }
+        let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
+            get_docker_env()?;
+        writeln!(file, "export DOCKER_TLS_VERIFY=\"{}\"", docker_tls_verify)?;
+        writeln!(file, "export DOCKER_HOST=\"{}\"", docker_host)?;
+        writeln!(file, "export DOCKER_CERT_PATH=\"{}\"", docker_cert_path)?;
+        writeln!(
+            file,
+            "export MINIKUBE_ACTIVE_DOCKERD=\"{}\"",
+            minikube_active_dockerd
+        )?;
 
         println!("success");
     }
@@ -96,5 +101,50 @@ pub async fn point_docker_to_minikube() -> Result<()> {
 
 #[cfg(target_family = "windows")]
 pub async fn point_docker_to_minikube() -> Result<()> {
+    use crate::init::commands::{get_stdout_and_handle_errors, read_from_environment};
+
+    let current_docker_tls_verify = read_from_environment("DOCKER_TLS_VERIFY");
+
+    if !current_docker_tls_verify.is_err() {
+        println!("already done");
+    } else {
+        let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
+            get_docker_env()?;
+
+        let output = Command::new("SETX")
+            .arg("DOCKER_TLS_VERIFY")
+            .arg(docker_tls_verify)
+            .output()
+            .expect("failed to execute process");
+
+        get_stdout_and_handle_errors(output)?;
+
+        let output = Command::new("SETX")
+            .arg("DOCKER_HOST")
+            .arg(docker_host)
+            .output()
+            .expect("failed to execute process");
+
+        get_stdout_and_handle_errors(output)?;
+
+        let output = Command::new("SETX")
+            .arg("DOCKER_CERT_PATH")
+            .arg(docker_cert_path)
+            .output()
+            .expect("failed to execute process");
+
+        get_stdout_and_handle_errors(output)?;
+
+        let output = Command::new("SETX")
+            .arg("MINIKUBE_ACTIVE_DOCKERD")
+            .arg(minikube_active_dockerd)
+            .output()
+            .expect("failed to execute process");
+
+        get_stdout_and_handle_errors(output)?;
+
+        println!("success");
+    }
+
     Ok(())
 }

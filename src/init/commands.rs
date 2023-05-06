@@ -16,15 +16,17 @@ enum Binary {
     Minikube,
 }
 
-pub fn get_docker_env() -> Result<String> {
+pub fn get_docker_env() -> Result<(String, String, String, String)> {
     let output = Command::new(get_binary_path(Binary::Minikube)?)
         .arg("docker-env")
+        .arg("--shell")
+        .arg("bash")
         .output()
         .expect("failed to execute process");
 
     let docker_env = get_stdout_and_handle_errors(output)?;
 
-    Ok(docker_env)
+    Ok(parse_env_string(docker_env.as_str()))
 }
 
 pub fn enable_minikube_ingress_addon() -> Result<()> {
@@ -120,7 +122,7 @@ pub fn create_certificate_files() -> Result<()> {
     Ok(())
 }
 
-fn get_stdout_and_handle_errors(output: Output) -> Result<String> {
+pub fn get_stdout_and_handle_errors(output: Output) -> Result<String> {
     let stdout = String::from_utf8(output.stdout.to_vec())?;
     let stdout = stdout.trim().to_string();
 
@@ -158,4 +160,54 @@ fn get_binary_path(binary: Binary) -> Result<PathBuf> {
     };
 
     Ok(path)
+}
+
+fn parse_env_string(docker_env_bash: &str) -> (String, String, String, String) {
+    let mut docker_tls_verify = String::new();
+    let mut docker_host = String::new();
+    let mut docker_cert_path = String::new();
+    let mut minikube_active_dockerd = String::new();
+
+    for line in docker_env_bash.lines() {
+        let parts: Vec<&str> = line.split('=').collect();
+        if parts.len() == 2 {
+            match parts[0] {
+                "export DOCKER_TLS_VERIFY" => {
+                    docker_tls_verify = parts[1].to_string().replace("\"", "")
+                }
+                "export DOCKER_HOST" => docker_host = parts[1].to_string().replace("\"", ""),
+                "export DOCKER_CERT_PATH" => {
+                    docker_cert_path = parts[1].to_string().replace("\"", "")
+                }
+                "export MINIKUBE_ACTIVE_DOCKERD" => {
+                    minikube_active_dockerd = parts[1].to_string().replace("\"", "")
+                }
+                _ => (),
+            }
+        }
+    }
+
+    (
+        docker_tls_verify,
+        docker_host,
+        docker_cert_path,
+        minikube_active_dockerd,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_env_string() {
+        let env_string = "export DOCKER_TLS_VERIFY=\"1\"\nexport DOCKER_HOST=\"tcp://192.168.59.101:2376\"\nexport DOCKER_CERT_PATH=\"/home/timo/.minikube/certs\"\nexport MINIKUBE_ACTIVE_DOCKERD=\"minikube\"\n\n# To point your shell to minikube's docker-daemon, run:\n# eval $(minikube -p minikube docker-env)";
+        let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
+            parse_env_string(env_string);
+
+        assert_eq!(docker_tls_verify, "1");
+        assert_eq!(docker_host, "tcp://192.168.59.101:2376");
+        assert_eq!(docker_cert_path, "/home/timo/.minikube/certs");
+        assert_eq!(minikube_active_dockerd, "minikube");
+    }
 }
