@@ -43,3 +43,16 @@ pub fn read_from_environment(key: &str) -> Result<String> {
 
     Ok(result.to_string())
 }
+
+pub fn delete_from_environment(key: &str) -> Result<()> {
+    Command::new("reg")
+        .arg("delete")
+        .arg("HKEY_CURRENT_USER\\Environment")
+        .arg("/v")
+        .arg(key)
+        .arg("/f")
+        .output()
+        .expect("failed to execute process");
+
+    Ok(())
+}
