@@ -1,6 +1,6 @@
 use crate::shared::consts::{MINIKUBE_HOST, TLS_SECRET};
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::handle_output;
+use crate::shared::{get_k8s_client, handle_output};
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -62,7 +62,6 @@ async fn install_tls_secret() -> Result<()> {
         "type": "kubernetes.io/tls"
     }))?;
 
-    //todo: patch
     let result = secrets.create(&PostParams::default(), &secret).await;
 
     handle_resource_creation_result(result)?;
@@ -96,29 +95,4 @@ fn handle_resource_creation_result<T>(result: kube::Result<T, Error>) -> Result<
     }
 
     Ok(())
-}
-
-async fn get_k8s_client() -> Result<kube::Client> {
-    let client = match kube::Client::try_default().await {
-        Ok(inner) => inner,
-        Err(err) => {
-            return Err(anyhow!(
-                "failed to load cluster config: {}",
-                err.to_string()
-            ));
-        }
-    };
-
-    match client.apiserver_version().await {
-        Ok(inner) => inner,
-        Err(_) => {
-            return Err(anyhow!(
-                "failed to connect to cluster, is minikube running?"
-            ));
-        }
-    };
-
-    // ToDo: make sure the context is minikube
-
-    Ok(client)
 }

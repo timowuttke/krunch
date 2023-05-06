@@ -25,3 +25,28 @@ pub fn handle_output(output: Output) -> Result<String> {
 
     Ok(stdout)
 }
+
+pub async fn get_k8s_client() -> Result<kube::Client> {
+    let client = match kube::Client::try_default().await {
+        Ok(inner) => inner,
+        Err(err) => {
+            return Err(anyhow!(
+                "failed to load cluster config: {}",
+                err.to_string()
+            ));
+        }
+    };
+
+    match client.apiserver_version().await {
+        Ok(inner) => inner,
+        Err(_) => {
+            return Err(anyhow!(
+                "failed to connect to cluster, is minikube running?"
+            ));
+        }
+    };
+
+    // ToDo: make sure the context is minikube
+
+    Ok(client)
+}

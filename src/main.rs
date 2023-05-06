@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     match &args.command {
         Commands::Install => cli_init().await?,
-        Commands::Remove => cli_remove(),
+        Commands::Remove => cli_remove().await?,
         Commands::Version => cli_version(),
     }
 
