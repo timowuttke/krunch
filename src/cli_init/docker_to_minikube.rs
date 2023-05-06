@@ -58,6 +58,7 @@ fn point_docker_to_minikube_unix() -> Result<()> {
 fn point_docker_to_minikube_windows() -> Result<()> {
     let current_docker_tls_verify = read_from_environment("DOCKER_TLS_VERIFY");
 
+    // todo: allow to update IP
     if !current_docker_tls_verify.is_err() {
         println!("already done");
     } else {
