@@ -1,4 +1,5 @@
-use crate::shared::commands::{get_bin_folder, read_from_environment, write_to_environment};
+use crate::shared::file_folder_paths::get_bin_folder;
+use crate::shared::windows_registry::{read_from_environment, write_to_environment};
 use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;

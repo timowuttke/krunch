@@ -12,7 +12,6 @@ pub mod create_tls_secret;
 mod docker_to_minikube;
 mod download_binaries;
 mod enable_ingress;
-mod urls;
 
 pub async fn cli_init() -> Result<()> {
     download_all().await?;

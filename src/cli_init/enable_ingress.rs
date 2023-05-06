@@ -1,8 +1,8 @@
+use crate::shared::file_folder_paths::{get_binary_path, Binary};
+use crate::shared::handle_output;
 use anyhow::Result;
-use std::process::Command;
-
-use crate::shared::commands::{get_binary_path, handle_output, Binary};
 use serde_json::Value;
+use std::process::Command;
 
 pub fn enable_ingress_addon_if_needed() -> Result<()> {
     let status: Value = get_minikbe_addons()?;

@@ -1,4 +1,6 @@
-use crate::shared::commands::{get_binary_path, handle_output, read_from_environment, Binary};
+use crate::shared::file_folder_paths::{get_binary_path, Binary};
+use crate::shared::handle_output;
+use crate::shared::windows_registry::read_from_environment;
 use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;

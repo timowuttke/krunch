@@ -1,12 +1,8 @@
+use crate::shared::consts::{
+    BUILDX_VERSION, DOCKER_VERSION, HELM_VERSION, K9S_VERSION, KUBECTL_VERSION, MKCERT_VERSION,
+    SKAFFOLD_VERSION,
+};
 use reqwest::Url;
-
-const KUBECTL_VERSION: &str = "1.26.0";
-const HELM_VERSION: &str = "3.2.0";
-const MKCERT_VERSION: &str = "1.4.4";
-const SKAFFOLD_VERSION: &str = "2.3.1";
-const K9S_VERSION: &str = "0.27.3";
-const DOCKER_VERSION: &str = "23.0.4";
-const BUILDX_VERSION: &str = "0.10.4";
 
 pub struct Download {
     pub target: String,
