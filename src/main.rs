@@ -1,13 +1,13 @@
-use crate::init::cli_init;
-use crate::remove::cli_remove;
-use crate::version::cli_version;
+use crate::cli_init::cli_init;
+use crate::cli_remove::cli_remove;
+use crate::cli_version::cli_version;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
+mod cli_init;
+mod cli_remove;
+mod cli_version;
 mod r#const;
-mod init;
-mod remove;
-mod version;
 
 #[derive(Parser)]
 struct Cli {

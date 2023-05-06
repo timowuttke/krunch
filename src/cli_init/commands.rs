@@ -1,4 +1,4 @@
-use crate::init::downloads::get_bin_folder;
+use crate::cli_init::downloads::get_bin_folder;
 use crate::r#const::MINIKUBE_HOST;
 use anyhow::{anyhow, Result};
 use serde_json::Value;

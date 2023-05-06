@@ -1,4 +1,4 @@
-use crate::init::urls::get_downloads;
+use crate::cli_init::urls::get_downloads;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
 use futures_util::StreamExt;

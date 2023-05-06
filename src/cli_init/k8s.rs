@@ -7,7 +7,7 @@ use kube::{
     Error,
 };
 
-use crate::init::commands::{
+use crate::cli_init::commands::{
     create_certificate_files, enable_minikube_ingress_addon, get_minikbe_addons,
 };
 

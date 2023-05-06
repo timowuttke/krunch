@@ -1,5 +1,5 @@
-use crate::init::commands::get_docker_env;
-use crate::init::downloads::get_bin_folder;
+use crate::cli_init::commands::get_docker_env;
+use crate::cli_init::downloads::get_bin_folder;
 use anyhow::Result;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -42,7 +42,7 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
 
 #[cfg(target_family = "windows")]
 pub async fn add_bin_folder_to_path() -> Result<()> {
-    use crate::init::commands::{read_from_environment, write_to_environment};
+    use crate::cli_init::commands::{read_from_environment, write_to_environment};
 
     let current_path = read_from_environment("Path")?;
     let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
@@ -101,7 +101,7 @@ pub async fn point_docker_to_minikube() -> Result<()> {
 
 #[cfg(target_family = "windows")]
 pub async fn point_docker_to_minikube() -> Result<()> {
-    use crate::init::commands::{get_stdout_and_handle_errors, read_from_environment};
+    use crate::cli_init::commands::{get_stdout_and_handle_errors, read_from_environment};
 
     let current_docker_tls_verify = read_from_environment("DOCKER_TLS_VERIFY");
 

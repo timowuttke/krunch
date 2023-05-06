@@ -1,7 +1,7 @@
-use crate::init::commands::install_local_ca;
-use crate::init::downloads::download_all;
-use crate::init::environment::{add_bin_folder_to_path, point_docker_to_minikube};
-use crate::init::k8s::{enabling_ingress_addon, install_tls_secret};
+use crate::cli_init::commands::install_local_ca;
+use crate::cli_init::downloads::download_all;
+use crate::cli_init::environment::{add_bin_folder_to_path, point_docker_to_minikube};
+use crate::cli_init::k8s::{enabling_ingress_addon, install_tls_secret};
 use anyhow::Result;
 use std::io;
 use std::io::Write;
