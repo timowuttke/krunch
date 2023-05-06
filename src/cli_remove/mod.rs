@@ -8,13 +8,13 @@ mod remove_environment_entries;
 mod remove_tls_secret;
 
 pub async fn cli_remove() -> Result<()> {
-    print!("{:<30}", "creating TLS secret");
+    print!("{:<30}", "deleting environment entries");
     io::stdout().flush().unwrap();
     if let Err(err) = remove_environment_entries() {
         println!("{}", err)
     };
 
-    print!("{:<30}", "deleting local CA and minikube TLS secret");
+    print!("{:<30}", "deleting TLS secret");
     io::stdout().flush().unwrap();
     if let Err(err) = remove_tls_secret().await {
         println!("{}", err)

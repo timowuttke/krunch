@@ -41,7 +41,7 @@ fn handle_resource_deletion_result<T>(result: kube::Result<T, Error>) -> Result<
         Ok(_) => println!("success"),
         Err(Error::Api(inner)) => {
             if inner.reason == "NotFound" {
-                println!("already deleted");
+                println!("nothing to do");
             }
         }
         Err(err) => {
