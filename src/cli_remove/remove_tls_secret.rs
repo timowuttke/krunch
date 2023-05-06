@@ -15,12 +15,16 @@ pub async fn remove_tls_secret() -> Result<()> {
 }
 
 fn remove_local_ca() -> Result<()> {
-    let output = Command::new(get_binary_path(Binary::Mkcert)?)
-        .arg("-uninstall")
-        .output()
-        .expect("failed to execute process");
+    let mkcert_path = get_binary_path(Binary::Mkcert)?;
 
-    handle_output(output)?;
+    if mkcert_path.exists() {
+        let output = Command::new(mkcert_path)
+            .arg("-uninstall")
+            .output()
+            .expect("failed to execute process");
+
+        handle_output(output)?;
+    }
 
     Ok(())
 }
