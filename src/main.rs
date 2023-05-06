@@ -29,6 +29,8 @@ enum Commands {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
+    // todo: ensure minikube is running
+
     match &args.command {
         Commands::Install => cli_init().await?,
         Commands::Remove => cli_remove(),
