@@ -1,38 +1,36 @@
+use crate::shared::commands::{get_binary_path, handle_output, Binary};
+use crate::shared::r#const::{MINIKUBE_HOST, TLS_SECRET};
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
 use k8s_openapi::api::core::v1::Secret;
-use kube::{
-    api::{Api, PostParams},
-    Error,
-};
-
-use crate::cli_init::commands::{
-    create_certificate_files, enable_minikube_ingress_addon, get_minikbe_addons,
-};
-
-use crate::r#const::{MINIKUBE_HOST, TLS_SECRET};
-use serde_json::Value;
+use kube::api::PostParams;
+use kube::{Api, Error};
 use std::fs;
 use std::fs::File;
 use std::io::Read;
+use std::process::Command;
 
-pub fn enabling_ingress_addon() -> Result<()> {
-    let status: Value = get_minikbe_addons()?;
-
-    if status["ingress"]["Status"] == "enabled" {
-        println!("already done")
-    } else {
-        enable_minikube_ingress_addon()?;
-        println!("success")
-    }
+pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
+    install_local_ca()?;
+    create_certificate_files()?;
+    install_tls_secret().await?;
 
     Ok(())
 }
 
-pub async fn install_tls_secret() -> Result<()> {
-    create_certificate_files()?;
+fn install_local_ca() -> Result<()> {
+    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+        .arg("--install")
+        .output()
+        .expect("failed to execute process");
 
+    handle_output(output)?;
+
+    Ok(())
+}
+
+async fn install_tls_secret() -> Result<()> {
     let mut file = File::open(format!("{}.pem", MINIKUBE_HOST))?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -67,6 +65,17 @@ pub async fn install_tls_secret() -> Result<()> {
     let result = secrets.create(&PostParams::default(), &secret).await;
 
     handle_resource_creation_result(result)?;
+
+    Ok(())
+}
+
+fn create_certificate_files() -> Result<()> {
+    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+        .arg(MINIKUBE_HOST)
+        .output()
+        .expect("failed to execute process");
+
+    handle_output(output)?;
 
     Ok(())
 }

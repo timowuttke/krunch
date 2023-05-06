@@ -1,4 +1,5 @@
 use crate::cli_init::urls::get_downloads;
+use crate::shared::commands::get_bin_folder;
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
 use futures_util::StreamExt;
@@ -144,14 +145,7 @@ fn get_progress_bar(total_size: u64, target_name: &str) -> ProgressBar {
     pb
 }
 
-pub fn get_bin_folder() -> Result<PathBuf> {
-    return match home::home_dir() {
-        None => return Err(anyhow!("failed to detect home directory")),
-        Some(inner) => Ok(inner.join(".krunch/bin")),
-    };
-}
-
-pub fn get_buildx_folder() -> Result<PathBuf> {
+fn get_buildx_folder() -> Result<PathBuf> {
     return match home::home_dir() {
         None => return Err(anyhow!("failed to detect home directory")),
         Some(inner) => Ok(inner.join(".docker/cli-plugins")),

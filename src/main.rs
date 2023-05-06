@@ -7,7 +7,7 @@ use clap::{Parser, Subcommand};
 mod cli_init;
 mod cli_remove;
 mod cli_version;
-mod r#const;
+mod shared;
 
 #[derive(Parser)]
 struct Cli {

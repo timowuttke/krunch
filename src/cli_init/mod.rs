@@ -1,15 +1,17 @@
-use crate::cli_init::commands::install_local_ca;
-use crate::cli_init::downloads::download_all;
-use crate::cli_init::environment::{add_bin_folder_to_path, point_docker_to_minikube};
-use crate::cli_init::k8s::{enabling_ingress_addon, install_tls_secret};
+use crate::cli_init::bin_folder_to_path::add_bin_folder_to_path;
+use crate::cli_init::create_tls_secret::create_ca_and_install_tls_in_cluster;
+use crate::cli_init::docker_to_minikube::point_docker_to_minikube;
+use crate::cli_init::download_binaries::download_all;
+use crate::cli_init::enable_ingress::enable_ingress_addon_if_needed;
 use anyhow::Result;
 use std::io;
 use std::io::Write;
 
-pub mod commands;
-mod downloads;
-mod environment;
-mod k8s;
+mod bin_folder_to_path;
+pub mod create_tls_secret;
+mod docker_to_minikube;
+mod download_binaries;
+mod enable_ingress;
 mod urls;
 
 pub async fn cli_init() -> Result<()> {
@@ -31,12 +33,11 @@ pub async fn cli_init() -> Result<()> {
 
     print!("{:<30}", "creating TLS secret");
     io::stdout().flush().unwrap();
-    install_local_ca()?;
-    install_tls_secret().await?;
+    create_ca_and_install_tls_in_cluster().await?;
 
     print!("{:<30}", "enabling ingress addon");
     io::stdout().flush().unwrap();
-    enabling_ingress_addon()?;
+    enable_ingress_addon_if_needed()?;
 
     Ok(())
 }
