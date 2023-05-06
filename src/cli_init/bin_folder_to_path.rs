@@ -1,4 +1,4 @@
-use crate::shared::file_folder_paths::get_bin_folder;
+use crate::shared::file_folder_paths::{get_bin_folder, get_shell_profile_path};
 use crate::shared::windows_registry::{read_from_environment, write_to_environment};
 use anyhow::Result;
 use std::fs::OpenOptions;
@@ -16,15 +16,13 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
 }
 
 fn add_bin_folder_to_path_unix() -> Result<()> {
-    let mut profile_path = home::home_dir().unwrap();
-    // todo: check for different shell variants, e.g. fn get_unix_file_for_path and make sure file exists
-    profile_path.push(".profile");
+    let profile_path = get_shell_profile_path()?;
 
     let mut profile = OpenOptions::new()
         .read(true)
         .write(true)
         .append(true)
-        .open(&profile_path)?;
+        .open(profile_path)?;
 
     let reader = BufReader::new(&profile);
     let mut already_exists = false;

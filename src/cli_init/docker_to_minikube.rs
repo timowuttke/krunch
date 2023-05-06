@@ -1,4 +1,4 @@
-use crate::shared::file_folder_paths::{get_binary_path, Binary};
+use crate::shared::file_folder_paths::{get_binary_path, get_shell_profile_path, Binary};
 use crate::shared::handle_output;
 use crate::shared::windows_registry::read_from_environment;
 use anyhow::Result;
@@ -18,13 +18,13 @@ pub async fn point_docker_to_minikube() -> Result<()> {
 }
 
 fn point_docker_to_minikube_unix() -> Result<()> {
-    let profile = format!("{}/.profile", home::home_dir().unwrap().display());
+    let profile_path = get_shell_profile_path()?;
 
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
         .append(true)
-        .open(&profile)?;
+        .open(profile_path)?;
 
     let reader = BufReader::new(&file);
     let mut already_exists = false;

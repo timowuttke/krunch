@@ -44,3 +44,12 @@ pub fn get_buildx_folder() -> Result<PathBuf> {
         Some(inner) => Ok(inner.join(".docker/cli-plugins")),
     };
 }
+
+pub fn get_shell_profile_path() -> Result<PathBuf> {
+    let mut profile_path = home::home_dir().expect("no home directory found");
+
+    // todo: check for different shell variants, e.g. fn get_unix_file_for_path and make sure file exists
+    profile_path.push(".profile");
+
+    Ok(profile_path)
+}
