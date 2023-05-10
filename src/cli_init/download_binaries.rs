@@ -6,16 +6,16 @@ use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Url;
 use std::cmp::min;
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::path::PathBuf;
 use std::{fs, io};
 use tar::Archive;
 use tempfile::{Builder, TempDir};
 use terminal_size::terminal_size;
 use walkdir::{DirEntry, WalkDir};
-
-// todo: move krunch itself into bin folder
 
 pub async fn download_all() -> Result<()> {
     let downloads = get_downloads();
@@ -34,6 +34,15 @@ pub async fn download_all() -> Result<()> {
             download_file(download.source, download.target.as_str()).await?;
             println!("\rdownloading {:<18}success", &download.target);
         }
+    }
+
+    match move_and_rename_krunch_executable() {
+        Ok(_) => {}
+        Err(err) => println!(
+            "failed to move krunch executable to {}: {}",
+            get_bin_folder()?.display(),
+            err
+        ),
     }
 
     Ok(())
@@ -66,6 +75,21 @@ async fn download_file(url: Url, target_name: &str) -> Result<()> {
 
     drop(tmp_file);
     tmp_dir.close()?;
+
+    Ok(())
+}
+
+fn move_and_rename_krunch_executable() -> Result<()> {
+    let extension = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ""
+    };
+
+    let bin_folder = get_bin_folder()?;
+    let current_exe_path = env::current_exe()?;
+    let target_path = Path::new(&bin_folder).join(format!("krunch{}", extension));
+    fs::rename(&current_exe_path, &target_path)?;
 
     Ok(())
 }
