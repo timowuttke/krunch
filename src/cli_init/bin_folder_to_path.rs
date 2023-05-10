@@ -1,9 +1,7 @@
 use crate::shared::file_folder_paths::{get_bin_folder, get_shell_profile_path};
 use crate::shared::windows_registry::{read_from_environment, write_to_environment};
 use anyhow::Result;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::fs;
 
 pub async fn add_bin_folder_to_path() -> Result<()> {
     if cfg!(target_family = "unix") {
@@ -17,31 +15,20 @@ pub async fn add_bin_folder_to_path() -> Result<()> {
 
 fn add_bin_folder_to_path_unix() -> Result<()> {
     let profile_path = get_shell_profile_path()?;
-
-    let mut profile = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .append(true)
-        .open(profile_path)?;
-
-    let reader = BufReader::new(&profile);
-    let mut already_exists = false;
     let bin_folder = get_bin_folder()?;
-    for line in reader.lines() {
-        let line = line?;
-        if line.contains(&bin_folder.display().to_string()) {
-            already_exists = true;
-            break;
-        }
-    }
 
-    if already_exists {
+    let mut data = fs::read_to_string(&profile_path)?;
+    data = data.trim().to_string();
+
+    if data.contains(&bin_folder.display().to_string()) {
         println!("already done");
     } else {
-        writeln!(profile, "\n# krunch")?;
-        writeln!(profile, "export PATH=\"{}:$PATH\"", bin_folder.display())?;
+        data.push_str("\n\n# krunch");
+        data.push_str(format!("\nexport PATH=\"{}:$PATH\"", bin_folder.display()).as_str());
+
+        fs::write(profile_path, data)?;
         println!("success");
-    }
+    };
 
     Ok(())
 }
