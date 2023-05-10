@@ -28,3 +28,4 @@ clap = { version = "4.2.5", features = ["derive"] }
 futures-util = "0.3.14"
 indicatif = "0.15.0"
 terminal_size = "0.2.6"
+regex = "1.8.1"

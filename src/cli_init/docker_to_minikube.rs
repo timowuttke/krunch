@@ -2,9 +2,7 @@ use crate::shared::file_folder_paths::{get_binary_path, get_shell_profile_path, 
 use crate::shared::handle_output;
 use crate::shared::windows_registry::read_from_environment;
 use anyhow::Result;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::fs;
 use std::process::Command;
 
 pub async fn point_docker_to_minikube() -> Result<()> {
@@ -17,38 +15,38 @@ pub async fn point_docker_to_minikube() -> Result<()> {
     Ok(())
 }
 
-// todo: allow to update IP
 fn point_docker_to_minikube_unix() -> Result<()> {
+    let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
+        get_docker_env()?;
+
     let profile_path = get_shell_profile_path()?;
 
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .append(true)
-        .open(profile_path)?;
+    let mut data = fs::read_to_string(&profile_path)?;
+    data = data.trim().to_string();
 
-    let reader = BufReader::new(&file);
-    let mut already_exists = false;
-    for line in reader.lines() {
-        if line?.contains("export DOCKER_HOST") {
-            already_exists = true;
-            break;
-        }
-    }
-
-    if already_exists {
+    if data.contains(&docker_host) {
         println!("already done");
+    } else if data.contains("export DOCKER_HOST") {
+        let re = regex::Regex::new(r"(?m)^export DOCKER_HOST.*\n").unwrap();
+        data = re
+            .replace(&data, format!("export DOCKER_HOST=\"{}\"\n", docker_host))
+            .to_string();
+        fs::write(profile_path, data)?;
+
+        println!("minikube IP updated");
     } else {
-        let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
-            get_docker_env()?;
-        writeln!(file, "export DOCKER_TLS_VERIFY=\"{}\"", docker_tls_verify)?;
-        writeln!(file, "export DOCKER_HOST=\"{}\"", docker_host)?;
-        writeln!(file, "export DOCKER_CERT_PATH=\"{}\"", docker_cert_path)?;
-        writeln!(
-            file,
-            "export MINIKUBE_ACTIVE_DOCKERD=\"{}\"",
-            minikube_active_dockerd
-        )?;
+        data.push_str(format!("\nexport DOCKER_TLS_VERIFY=\"{}\"", docker_tls_verify).as_str());
+        data.push_str(format!("\nexport DOCKER_HOST=\"{}\"", docker_host).as_str());
+        data.push_str(format!("\nexport DOCKER_CERT_PATH=\"{}\"", docker_cert_path).as_str());
+        data.push_str(
+            format!(
+                "\nexport MINIKUBE_ACTIVE_DOCKERD=\"{}\"",
+                minikube_active_dockerd
+            )
+            .as_str(),
+        );
+
+        fs::write(profile_path, data)?;
 
         println!("success");
     }
