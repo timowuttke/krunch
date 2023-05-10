@@ -17,6 +17,7 @@ pub async fn point_docker_to_minikube() -> Result<()> {
     Ok(())
 }
 
+// todo: allow to update IP
 fn point_docker_to_minikube_unix() -> Result<()> {
     let profile_path = get_shell_profile_path()?;
 
@@ -56,15 +57,26 @@ fn point_docker_to_minikube_unix() -> Result<()> {
 }
 
 fn point_docker_to_minikube_windows() -> Result<()> {
-    let current_docker_tls_verify = read_from_environment("DOCKER_TLS_VERIFY");
+    let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
+        get_docker_env()?;
 
-    // todo: allow to update IP
-    if !current_docker_tls_verify.is_err() {
-        println!("already done");
+    let current_docker_host = read_from_environment("DOCKER_HOST");
+
+    if let Ok(current_docker_host) = current_docker_host {
+        if docker_host == current_docker_host {
+            println!("already done");
+        } else {
+            let output = Command::new("SETX")
+                .arg("DOCKER_HOST")
+                .arg(docker_host)
+                .output()
+                .expect("failed to execute process");
+
+            handle_output(output)?;
+
+            println!("minikube IP updated");
+        }
     } else {
-        let (docker_tls_verify, docker_host, docker_cert_path, minikube_active_dockerd) =
-            get_docker_env()?;
-
         let output = Command::new("SETX")
             .arg("DOCKER_TLS_VERIFY")
             .arg(docker_tls_verify)
