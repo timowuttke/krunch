@@ -1,7 +1,7 @@
 use crate::shared::file_folder_paths::{get_binary_path, get_etc_hosts_path, Binary};
-use crate::shared::handle_output;
+use crate::shared::{handle_output, restore_term, save_term, should_continue_as_admin};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::fs;
 use std::process::Command;
 use tempfile::Builder;
@@ -26,6 +26,15 @@ fn add_dns_for_minikube_unix() -> Result<()> {
     if data.contains(&minikube_ip) {
         println!("already done");
     } else {
+        save_term()?;
+
+        if !should_continue_as_admin() {
+            restore_term()?;
+
+            return Err(anyhow!("skipped"));
+        }
+        restore_term()?;
+
         let (data, message) = update_dns_data(data, minikube_ip);
 
         let tmp_file = Builder::new().tempfile()?;
@@ -40,6 +49,7 @@ fn add_dns_for_minikube_unix() -> Result<()> {
             .output()?;
         handle_output(output)?;
 
+        restore_term()?;
         println!("{}", message);
     };
 
@@ -57,6 +67,10 @@ fn add_dns_for_minikube_windows() -> Result<()> {
     if data.contains(&minikube_ip) {
         println!("already done");
     } else {
+        if !should_continue_as_admin() {
+            return Err(anyhow!("skipped"));
+        }
+
         let (data, message) = update_dns_data(data, minikube_ip);
 
         let tmp_file = Builder::new().tempfile()?;

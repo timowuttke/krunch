@@ -1,4 +1,11 @@
 use anyhow::{anyhow, Result};
+use crossterm::{
+    cursor::{RestorePosition, SavePosition},
+    execute,
+    style::Print,
+    terminal::{Clear, ClearType},
+};
+use std::io::{stdin, stdout, Write};
 use std::process::Output;
 
 pub mod download_urls;
@@ -61,9 +68,40 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
     Ok(client)
 }
 
-// todo: finish
 pub fn should_continue_as_admin() -> bool {
-    println!("warning message");
+    print!("Update necessary: Continue as admin (y/N)? ");
+    stdout().flush().unwrap();
 
-    true
+    loop {
+        let mut input = String::new();
+        stdin().read_line(&mut input).unwrap();
+        let input = input.trim();
+
+        return match input.to_lowercase().as_str() {
+            "y" => true,
+            _ => false,
+        };
+    }
+}
+
+pub fn save_term() -> Result<()> {
+    let mut stdout = stdout();
+
+    execute!(stdout, SavePosition)?;
+
+    Ok(())
+}
+
+pub fn restore_term() -> Result<()> {
+    let mut stdout = stdout();
+
+    execute!(
+        stdout,
+        RestorePosition,
+        Print("\x1B[1A"),
+        Clear(ClearType::UntilNewLine),
+    )?;
+    stdout.flush().unwrap();
+
+    Ok(())
 }
