@@ -53,3 +53,11 @@ pub fn get_shell_profile_path() -> Result<PathBuf> {
 
     Ok(profile_path)
 }
+
+pub fn get_etc_hosts_path() -> Result<PathBuf> {
+    return if cfg!(target_os = "windows") {
+        Ok(PathBuf::from("C:/Windows/System32/Drivers/etc/hosts"))
+    } else {
+        Ok(PathBuf::from("/etc/hosts"))
+    };
+}

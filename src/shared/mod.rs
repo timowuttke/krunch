@@ -50,3 +50,10 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
 
     Ok(client)
 }
+
+// todo: finish
+pub fn should_continue_as_admin() -> bool {
+    println!("warning message");
+
+    true
+}
