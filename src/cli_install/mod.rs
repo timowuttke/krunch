@@ -30,6 +30,12 @@ pub async fn cli_install() -> Result<()> {
         println!("{}", err)
     }
 
+    print!("{:<30}", "enabling ingress addon");
+    io::stdout().flush().unwrap();
+    if let Err(err) = enable_ingress_addon_if_needed() {
+        println!("{}", err)
+    };
+
     print!("{:30}", "add dns entry for k8s.local");
     io::stdout().flush().unwrap();
     if let Err(err) = add_dns_for_minikube() {
@@ -39,12 +45,6 @@ pub async fn cli_install() -> Result<()> {
     print!("{:<30}", "creating TLS secret");
     io::stdout().flush().unwrap();
     if let Err(err) = create_ca_and_install_tls_in_cluster().await {
-        println!("{}", err)
-    };
-
-    print!("{:<30}", "enabling ingress addon");
-    io::stdout().flush().unwrap();
-    if let Err(err) = enable_ingress_addon_if_needed() {
         println!("{}", err)
     };
 
