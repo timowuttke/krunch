@@ -26,22 +26,7 @@ fn add_dns_for_minikube_unix() -> Result<()> {
     if data.contains(&minikube_ip) {
         println!("already done");
     } else {
-        let message;
-
-        if data.contains("k8s.local") {
-            let re = regex::Regex::new(r"(?m)^.*k8s.local\n").unwrap();
-            data = re
-                .replace(&data, format!("{}\tk8s.local\n", minikube_ip))
-                .to_string();
-            message = "minikube ip updated";
-        } else {
-            let re = regex::Regex::new(r"(?m)^\n").unwrap();
-            data = re
-                .replace(&data, format!("{}\tk8s.local\n\n", minikube_ip))
-                .to_string();
-
-            message = "success";
-        };
+        let (data, message) = update_dns_data(data, minikube_ip);
 
         let tmp_file = Builder::new().tempfile()?;
         fs::write(&tmp_file, &data)?;
@@ -61,8 +46,61 @@ fn add_dns_for_minikube_unix() -> Result<()> {
     Ok(())
 }
 
+//todo: test this
 fn add_dns_for_minikube_windows() -> Result<()> {
-    todo!()
+    let etc_hosts_path = get_etc_hosts_path()?;
+    let mut data = fs::read_to_string(&etc_hosts_path)?;
+    data = data.trim().to_string();
+
+    let minikube_ip = get_minikube_ip()?;
+
+    if data.contains(&minikube_ip) {
+        println!("already done");
+    } else {
+        let (data, message) = update_dns_data(data, minikube_ip);
+
+        let tmp_file = Builder::new().tempfile()?;
+        fs::write(&tmp_file, &data)?;
+
+        let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
+        let copy_command = format!("copy /Y \"{}\" \"{}\"", tmp_path, etc_hosts_path.display());
+
+        // Run powershell.exe with Start-Process to trigger a UAC prompt
+        let output = Command::new("powershell")
+            .arg("Start-Process")
+            .arg("cmd.exe")
+            .arg("/C")
+            .arg(&copy_command)
+            .arg("-Verb")
+            .arg("RunAs")
+            .output()?;
+        handle_output(output)?;
+
+        println!("{}", message);
+    };
+
+    Ok(())
+}
+
+fn update_dns_data(mut data: String, minikube_ip: String) -> (String, String) {
+    let message: &str;
+
+    if data.contains("k8s.local") {
+        let re = regex::Regex::new(r"(?m)^.*k8s.local\n").unwrap();
+        data = re
+            .replace(&data, format!("{}\tk8s.local\n", minikube_ip))
+            .to_string();
+        message = "minikube ip updated";
+    } else {
+        let re = regex::Regex::new(r"(?m)^\n").unwrap();
+        data = re
+            .replace(&data, format!("{}\tk8s.local\n\n", minikube_ip))
+            .to_string();
+
+        message = "success";
+    };
+
+    (data, message.to_string())
 }
 
 fn get_minikube_ip() -> Result<String> {
