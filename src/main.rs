@@ -1,10 +1,10 @@
-use crate::cli_init::cli_init;
+use crate::cli_install::cli_install;
 use crate::cli_remove::cli_remove;
 use crate::cli_version::cli_version;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-mod cli_init;
+mod cli_install;
 mod cli_remove;
 mod cli_version;
 mod shared;
@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
     // todo: ensure minikube is running
 
     match &args.command {
-        Commands::Install => cli_init().await?,
+        Commands::Install => cli_install().await?,
         Commands::Remove => cli_remove().await?,
         Commands::Version => cli_version(),
     }

@@ -1,9 +1,9 @@
-use crate::cli_init::bin_folder_to_path::add_bin_folder_to_path;
-use crate::cli_init::create_tls_secret::create_ca_and_install_tls_in_cluster;
-use crate::cli_init::dns_for_minikube::add_dns_for_minikube;
-use crate::cli_init::docker_to_minikube::point_docker_to_minikube;
-use crate::cli_init::download_binaries::download_all;
-use crate::cli_init::enable_ingress::enable_ingress_addon_if_needed;
+use crate::cli_install::bin_folder_to_path::add_bin_folder_to_path;
+use crate::cli_install::create_tls_secret::create_ca_and_install_tls_in_cluster;
+use crate::cli_install::dns_for_minikube::add_dns_for_minikube;
+use crate::cli_install::docker_to_minikube::point_docker_to_minikube;
+use crate::cli_install::download_binaries::download_all;
+use crate::cli_install::enable_ingress::enable_ingress_addon_if_needed;
 use anyhow::Result;
 use std::io;
 use std::io::Write;
@@ -15,7 +15,7 @@ mod docker_to_minikube;
 mod download_binaries;
 mod enable_ingress;
 
-pub async fn cli_init() -> Result<()> {
+pub async fn cli_install() -> Result<()> {
     download_all().await?;
 
     print!("{:30}", "adding tools to PATH");
