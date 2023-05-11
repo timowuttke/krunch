@@ -1,6 +1,5 @@
-use crate::shared::consts::TLS_SECRET;
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{get_k8s_client, handle_output};
+use crate::shared::{get_k8s_client, handle_output, TLS_SECRET};
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::DeleteParams;

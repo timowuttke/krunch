@@ -1,6 +1,5 @@
-use crate::shared::consts::{MINIKUBE_HOST, TLS_SECRET};
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{get_k8s_client, handle_output};
+use crate::shared::{get_k8s_client, handle_output, MINIKUBE_HOST, TLS_SECRET};
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
 use base64::Engine;

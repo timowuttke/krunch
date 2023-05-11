@@ -1,4 +1,4 @@
-use crate::shared::consts::{
+use crate::shared::{
     BUILDX_VERSION, DOCKER_VERSION, HELM_VERSION, K9S_VERSION, KUBECTL_VERSION, MKCERT_VERSION,
     SKAFFOLD_VERSION,
 };
