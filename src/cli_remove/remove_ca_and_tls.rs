@@ -10,7 +10,7 @@ use kube::api::DeleteParams;
 use kube::{Api, Error};
 use std::process::Command;
 
-pub async fn remove_tls_secret() -> Result<()> {
+pub async fn remove_ca_and_tls_secret() -> Result<()> {
     if !should_continue_as_admin()? {
         return Err(anyhow!("skipped"));
     }

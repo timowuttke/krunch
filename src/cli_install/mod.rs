@@ -1,5 +1,5 @@
 use crate::cli_install::bin_folder_to_path::add_bin_folder_to_path;
-use crate::cli_install::create_tls_secret::create_ca_and_install_tls_in_cluster;
+use crate::cli_install::create_ca_and_tls::create_ca_and_tls;
 use crate::cli_install::dns_for_minikube::add_dns_for_minikube;
 use crate::cli_install::docker_to_minikube::point_docker_to_minikube;
 use crate::cli_install::download_binaries::download_all;
@@ -9,7 +9,7 @@ use std::io;
 use std::io::Write;
 
 mod bin_folder_to_path;
-pub mod create_tls_secret;
+pub mod create_ca_and_tls;
 mod dns_for_minikube;
 mod docker_to_minikube;
 mod download_binaries;
@@ -44,7 +44,7 @@ pub async fn cli_install() -> Result<()> {
 
     print!("{:<35}", "creating local CA");
     io::stdout().flush().unwrap();
-    if let Err(err) = create_ca_and_install_tls_in_cluster().await {
+    if let Err(err) = create_ca_and_tls().await {
         println!("{}", err)
     };
 

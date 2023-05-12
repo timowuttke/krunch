@@ -14,7 +14,7 @@ use std::fs::File;
 use std::io::Read;
 use std::process::Command;
 
-pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
+pub async fn create_ca_and_tls() -> Result<()> {
     if !should_continue_as_admin()? {
         return Err(anyhow!("skipped"));
     }
