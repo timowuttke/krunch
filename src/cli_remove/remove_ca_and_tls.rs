@@ -11,48 +11,45 @@ use kube::{Api, Error};
 use std::process::Command;
 
 pub async fn remove_ca_and_tls_secret() -> Result<()> {
-    if !should_continue_as_admin()? {
-        return Err(anyhow!("skipped"));
+    let mkcert_path = get_binary_path(Binary::Mkcert)?;
+
+    if mkcert_path.exists() {
+        if !should_continue_as_admin()? {
+            return Err(anyhow!("skipped"));
+        }
+
+        if cfg!(target_family = "unix") {
+            remove_local_ca_unix()?;
+        } else if cfg!(target_family = "windows") {
+            remove_local_ca_windows()?;
+        }
     }
 
-    if cfg!(target_family = "unix") {
-        remove_local_ca_unix()?;
-    } else if cfg!(target_family = "windows") {
-        remove_local_ca_windows()?;
-    }
     delete_tls_secret().await?;
 
     Ok(())
 }
 
 fn remove_local_ca_unix() -> Result<()> {
-    let mkcert_path = get_binary_path(Binary::Mkcert)?;
+    save_term()?;
 
-    if mkcert_path.exists() {
-        save_term()?;
+    let output = Command::new("sudo")
+        .arg(get_binary_path(Binary::Mkcert)?)
+        .arg("--uninstall")
+        .output()
+        .expect("failed to execute process");
 
-        let output = Command::new("sudo")
-            .arg(get_binary_path(Binary::Mkcert)?)
-            .arg("--uninstall")
-            .output()
-            .expect("failed to execute process");
-
-        restore_term(1)?;
-        handle_output(output)?;
-    }
+    restore_term(1)?;
+    handle_output(output)?;
 
     Ok(())
 }
 
 fn remove_local_ca_windows() -> Result<()> {
-    let mkcert_path = get_binary_path(Binary::Mkcert)?;
+    let command = format!("{} --uninstall", get_binary_path(Binary::Mkcert)?.display());
 
-    if mkcert_path.exists() {
-        let command = format!("{} --uninstall", mkcert_path.display());
-
-        let output = power_shell_admin_prompt(command)?;
-        handle_output(output)?;
-    }
+    let output = power_shell_admin_prompt(command)?;
+    handle_output(output)?;
 
     Ok(())
 }
