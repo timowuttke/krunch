@@ -15,7 +15,7 @@ pub mod windows_registry;
 pub const MINIKUBE_HOST: &'static str = "k8s.local";
 pub const TLS_SECRET: &'static str = "tls";
 
-pub const KUBECTL_VERSION: &str = "1.26.0";
+pub const KUBECTL_VERSION: &str = "1.23.3";
 pub const HELM_VERSION: &str = "3.2.0";
 pub const MKCERT_VERSION: &str = "1.4.4";
 pub const SKAFFOLD_VERSION: &str = "2.3.1";
