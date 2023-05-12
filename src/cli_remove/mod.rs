@@ -1,4 +1,5 @@
 use crate::cli_remove::remove_binaries::remove_binaries;
+use crate::cli_remove::remove_dns_for_minikube::remove_dns_for_minikube;
 use crate::cli_remove::remove_tls_secret::remove_tls_secret;
 use anyhow::Result;
 use remove_environment_entries::remove_environment_entries;
@@ -29,7 +30,7 @@ pub async fn cli_remove() -> Result<()> {
         println!("{}", err)
     };
 
-    print!("{:<30}", "deleting downloaded files");
+    print!("{:<35}", "deleting downloaded files");
     io::stdout().flush().unwrap();
     if let Err(err) = remove_binaries() {
         println!("{}", err)

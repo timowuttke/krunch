@@ -1,12 +1,13 @@
 use anyhow::{anyhow, Result};
+use crossterm::event::{Event, KeyCode};
 use crossterm::{
     cursor::{RestorePosition, SavePosition},
-    execute,
+    event, execute,
     style::Print,
-    terminal::{Clear, ClearType},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
-use std::io::{stdin, stdout, Write};
-use std::process::Output;
+use std::io::{stdout, Write};
+use std::process::{Command, Output};
 
 pub mod download_urls;
 pub mod file_folder_paths;
@@ -68,20 +69,41 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
     Ok(client)
 }
 
-pub fn should_continue_as_admin() -> bool {
+pub fn should_continue_as_admin() -> Result<bool> {
+    save_term()?;
+
     print!("Continue as admin (y/N)? ");
-    stdout().flush().unwrap();
+    let _ = stdout().flush();
 
-    loop {
-        let mut input = String::new();
-        stdin().read_line(&mut input).unwrap();
-        let input = input.trim();
+    // Switch to raw mode
+    enable_raw_mode()?;
 
-        return match input.to_lowercase().as_str() {
-            "y" => true,
-            _ => false,
-        };
+    let input = ' ';
+
+    while !matches!(input, 'y' | 'n' | 'Y' | 'N') {
+        if let Event::Key(event) = event::read()? {
+            match event.code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    if cfg!(target_family = "unix") {
+                        let output = Command::new("sudo").arg("-k").output()?;
+                        handle_output(output)?;
+                    }
+
+                    disable_raw_mode()?;
+                    restore_term(0)?;
+                    return Ok(true);
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter => {
+                    disable_raw_mode()?;
+                    restore_term(0)?;
+                    return Ok(false);
+                }
+                _ => {}
+            }
+        }
     }
+
+    Ok(false)
 }
 
 pub fn save_term() -> Result<()> {
@@ -92,13 +114,18 @@ pub fn save_term() -> Result<()> {
     Ok(())
 }
 
-pub fn restore_term() -> Result<()> {
+pub fn restore_term(lines: u8) -> Result<()> {
     let mut stdout = stdout();
+
+    let lines_up = match lines {
+        0 => "".to_string(),
+        _ => format!("\x1B[{}A", lines),
+    };
 
     execute!(
         stdout,
         RestorePosition,
-        Print("\x1B[1A"),
+        Print(lines_up),
         Clear(ClearType::UntilNewLine),
     )?;
     stdout.flush().unwrap();

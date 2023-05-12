@@ -26,15 +26,9 @@ fn add_dns_for_minikube_unix() -> Result<()> {
     if data.contains(&minikube_ip) {
         println!("already done");
     } else {
-        save_term()?;
-
-        if !should_continue_as_admin() {
-            restore_term()?;
-
+        if !should_continue_as_admin()? {
             return Err(anyhow!("skipped"));
         }
-        restore_term()?;
-
         let (data, message) = update_dns_data(data, minikube_ip);
 
         let tmp_file = Builder::new().tempfile()?;
@@ -42,6 +36,7 @@ fn add_dns_for_minikube_unix() -> Result<()> {
 
         let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
 
+        save_term()?;
         let output = Command::new("sudo")
             .arg("mv")
             .arg(tmp_path)
@@ -49,7 +44,7 @@ fn add_dns_for_minikube_unix() -> Result<()> {
             .output()?;
         handle_output(output)?;
 
-        restore_term()?;
+        restore_term(1)?;
         println!("{}", message);
     };
 
@@ -67,7 +62,7 @@ fn add_dns_for_minikube_windows() -> Result<()> {
     if data.contains(&minikube_ip) {
         println!("already done");
     } else {
-        if !should_continue_as_admin() {
+        if !should_continue_as_admin()? {
             return Err(anyhow!("skipped"));
         }
 

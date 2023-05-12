@@ -1,5 +1,8 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{get_k8s_client, handle_output, MINIKUBE_HOST, TLS_SECRET};
+use crate::shared::{
+    get_k8s_client, handle_output, restore_term, save_term, should_continue_as_admin,
+    MINIKUBE_HOST, TLS_SECRET,
+};
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -12,6 +15,9 @@ use std::io::Read;
 use std::process::Command;
 
 pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
+    if !should_continue_as_admin()? {
+        return Err(anyhow!("skipped"));
+    }
     install_local_ca()?;
     create_certificate_files()?;
     install_tls_secret().await?;
@@ -19,13 +25,16 @@ pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
     Ok(())
 }
 
-// todo: admin warning
 fn install_local_ca() -> Result<()> {
-    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+    save_term()?;
+
+    let output = Command::new("sudo")
+        .arg(get_binary_path(Binary::Mkcert)?)
         .arg("--install")
         .output()
         .expect("failed to execute process");
 
+    restore_term(1)?;
     handle_output(output)?;
 
     Ok(())
