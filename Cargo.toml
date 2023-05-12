@@ -1,6 +1,6 @@
 [package]
 name = "krunch"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Timo Wuttke <timo.wuttke@gmail.com>"]
 edition = "2021"
 
