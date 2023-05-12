@@ -1,5 +1,5 @@
 use crate::shared::handle_output;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::process::Command;
 
 pub fn write_to_environment(key: &str, value: String) -> Result<()> {
@@ -39,9 +39,18 @@ pub fn read_from_environment(key: &str) -> Result<String> {
         .expect("failed to execute process");
 
     let tmp = handle_output(output)?;
-    let result = tmp.splitn(2, "C:\\").last().unwrap().trim();
 
-    Ok(result.to_string())
+    if let Some(line) = tmp.lines().last() {
+        let words: Vec<&str> = line.split_whitespace().collect();
+        if let Some(value) = words.last() {
+            return Ok(value.to_string());
+        }
+    }
+
+    Err(anyhow!(
+        "failed to read key {} from the windows registry",
+        key
+    ))
 }
 
 pub fn delete_from_environment(key: &str) -> Result<()> {
