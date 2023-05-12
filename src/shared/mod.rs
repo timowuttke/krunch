@@ -76,6 +76,19 @@ pub async fn get_minikube_client() -> Result<kube::Client> {
     Ok(client)
 }
 
+pub fn power_shell_admin_prompt(command: String) -> Result<Output> {
+    let output = Command::new("powershell")
+        .arg("Start-Process")
+        .arg("cmd.exe")
+        .arg("/C")
+        .arg(command)
+        .arg("-Verb")
+        .arg("RunAs")
+        .output()?;
+
+    Ok(output)
+}
+
 pub fn should_continue_as_admin() -> Result<bool> {
     save_term()?;
 

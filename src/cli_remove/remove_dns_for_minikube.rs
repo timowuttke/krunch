@@ -1,6 +1,7 @@
 use crate::shared::file_folder_paths::get_etc_hosts_path;
 use crate::shared::{
-    handle_output, restore_term, save_term, should_continue_as_admin, MINIKUBE_HOST,
+    handle_output, power_shell_admin_prompt, restore_term, save_term, should_continue_as_admin,
+    MINIKUBE_HOST,
 };
 
 use anyhow::{anyhow, Result};
@@ -72,15 +73,7 @@ fn remove_dns_for_minikube_windows() -> Result<()> {
         let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
         let copy_command = format!("copy /Y \"{}\" \"{}\"", tmp_path, etc_hosts_path.display());
 
-        // Run powershell.exe with Start-Process to trigger a UAC prompt
-        let output = Command::new("powershell")
-            .arg("Start-Process")
-            .arg("cmd.exe")
-            .arg("/C")
-            .arg(&copy_command)
-            .arg("-Verb")
-            .arg("RunAs")
-            .output()?;
+        let output = power_shell_admin_prompt(copy_command)?;
         handle_output(output)?;
 
         println!("success")
