@@ -69,7 +69,7 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
 }
 
 pub fn should_continue_as_admin() -> bool {
-    print!("Update necessary: Continue as admin (y/N)? ");
+    print!("Continue as admin (y/N)? ");
     stdout().flush().unwrap();
 
     loop {
