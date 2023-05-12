@@ -58,8 +58,8 @@ fn remove_dns_for_minikube_windows() -> Result<()> {
     let mut data = fs::read_to_string(&etc_hosts_path)?;
     data = data.trim().to_string();
 
-    if data.contains(MINIKUBE_HOST) {
-        println!("already done");
+    if !data.contains(MINIKUBE_HOST) {
+        println!("nothing to do");
     } else {
         if !should_continue_as_admin()? {
             return Err(anyhow!("skipped"));
