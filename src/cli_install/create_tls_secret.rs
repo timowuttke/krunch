@@ -1,7 +1,7 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
 use crate::shared::{
-    get_minikube_client, handle_output, restore_term, save_term, should_continue_as_admin,
-    MINIKUBE_HOST, TLS_SECRET,
+    get_minikube_client, handle_output, power_shell_admin_prompt, restore_term, save_term,
+    should_continue_as_admin, MINIKUBE_HOST, TLS_SECRET,
 };
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
@@ -18,22 +18,37 @@ pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
     if !should_continue_as_admin()? {
         return Err(anyhow!("skipped"));
     }
-    install_local_ca()?;
+
+    if cfg!(target_family = "unix") {
+        install_local_ca_unix()?;
+    } else if cfg!(target_family = "windows") {
+        install_local_ca_windows()?;
+    }
     create_certificate_files()?;
     install_tls_secret().await?;
 
     Ok(())
 }
 
-fn install_local_ca() -> Result<()> {
+fn install_local_ca_unix() -> Result<()> {
     save_term()?;
 
-    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+    let output = Command::new("sudo")
+        .arg(get_binary_path(Binary::Mkcert)?)
         .arg("--install")
         .output()
         .expect("failed to execute process");
 
     restore_term(1)?;
+    handle_output(output)?;
+
+    Ok(())
+}
+
+fn install_local_ca_windows() -> Result<()> {
+    let command = format!("{} --install", get_binary_path(Binary::Mkcert)?.display());
+
+    let output = power_shell_admin_prompt(command)?;
     handle_output(output)?;
 
     Ok(())

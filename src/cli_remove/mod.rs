@@ -24,7 +24,7 @@ pub async fn cli_remove() -> Result<()> {
         println!("{}", err)
     };
 
-    print!("{:<35}", "deleting TLS secret");
+    print!("{:<35}", "deleting local CA");
     io::stdout().flush().unwrap();
     if let Err(err) = remove_tls_secret().await {
         println!("{}", err)

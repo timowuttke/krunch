@@ -1,7 +1,7 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
 use crate::shared::{
-    get_minikube_client, handle_output, restore_term, save_term, should_continue_as_admin,
-    TLS_SECRET,
+    get_minikube_client, handle_output, power_shell_admin_prompt, restore_term, save_term,
+    should_continue_as_admin, TLS_SECRET,
 };
 use anyhow::{anyhow, Result};
 
@@ -14,26 +14,37 @@ pub async fn remove_tls_secret() -> Result<()> {
     if !should_continue_as_admin()? {
         return Err(anyhow!("skipped"));
     }
-    remove_local_ca()?;
+
+    if cfg!(target_family = "unix") {
+        remove_local_ca_unix()?;
+    } else if cfg!(target_family = "windows") {
+        remove_local_ca_windows()?;
+    }
     delete_tls_secret().await?;
 
     Ok(())
 }
 
-fn remove_local_ca() -> Result<()> {
-    let mkcert_path = get_binary_path(Binary::Mkcert)?;
+fn remove_local_ca_unix() -> Result<()> {
+    save_term()?;
 
-    if mkcert_path.exists() {
-        save_term()?;
+    let output = Command::new("sudo")
+        .arg(get_binary_path(Binary::Mkcert)?)
+        .arg("--uninstall")
+        .output()
+        .expect("failed to execute process");
 
-        let output = Command::new(mkcert_path)
-            .arg("-uninstall")
-            .output()
-            .expect("failed to execute process");
+    restore_term(1)?;
+    handle_output(output)?;
 
-        restore_term(1)?;
-        handle_output(output)?;
-    }
+    Ok(())
+}
+
+fn remove_local_ca_windows() -> Result<()> {
+    let command = format!("{} --uninstall", get_binary_path(Binary::Mkcert)?.display());
+
+    let output = power_shell_admin_prompt(command)?;
+    handle_output(output)?;
 
     Ok(())
 }

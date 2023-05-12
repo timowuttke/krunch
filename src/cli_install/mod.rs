@@ -36,13 +36,13 @@ pub async fn cli_install() -> Result<()> {
         println!("{}", err)
     };
 
-    print!("{:<35}", "add dns entry for k8s.local");
+    print!("{:<35}", "creating DNS entry");
     io::stdout().flush().unwrap();
     if let Err(err) = add_dns_for_minikube() {
         println!("{}", err)
     }
 
-    print!("{:<35}", "creating TLS secret");
+    print!("{:<35}", "creating local CA");
     io::stdout().flush().unwrap();
     if let Err(err) = create_ca_and_install_tls_in_cluster().await {
         println!("{}", err)
