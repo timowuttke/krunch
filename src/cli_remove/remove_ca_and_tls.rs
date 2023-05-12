@@ -23,9 +23,11 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
         } else if cfg!(target_family = "windows") {
             remove_local_ca_windows()?;
         }
-    }
 
-    delete_tls_secret().await?;
+        delete_tls_secret().await?;
+    } else {
+        println!("nothing to do");
+    }
 
     Ok(())
 }
