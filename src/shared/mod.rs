@@ -126,9 +126,7 @@ pub fn should_continue_as_admin() -> Result<bool> {
 }
 
 pub fn save_term() -> Result<()> {
-    let mut stdout = stdout();
-
-    execute!(stdout, SavePosition)?;
+    execute!(stdout(), SavePosition)?;
 
     Ok(())
 }
