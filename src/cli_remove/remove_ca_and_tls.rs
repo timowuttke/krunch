@@ -26,25 +26,33 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
 }
 
 fn remove_local_ca_unix() -> Result<()> {
-    save_term()?;
+    let mkcert_path = get_binary_path(Binary::Mkcert)?;
 
-    let output = Command::new("sudo")
-        .arg(get_binary_path(Binary::Mkcert)?)
-        .arg("--uninstall")
-        .output()
-        .expect("failed to execute process");
+    if mkcert_path.exists() {
+        save_term()?;
 
-    restore_term(1)?;
-    handle_output(output)?;
+        let output = Command::new("sudo")
+            .arg(get_binary_path(Binary::Mkcert)?)
+            .arg("--uninstall")
+            .output()
+            .expect("failed to execute process");
+
+        restore_term(1)?;
+        handle_output(output)?;
+    }
 
     Ok(())
 }
 
 fn remove_local_ca_windows() -> Result<()> {
-    let command = format!("{} --uninstall", get_binary_path(Binary::Mkcert)?.display());
+    let mkcert_path = get_binary_path(Binary::Mkcert)?;
 
-    let output = power_shell_admin_prompt(command)?;
-    handle_output(output)?;
+    if mkcert_path.exists() {
+        let command = format!("{} --uninstall", mkcert_path.display());
+
+        let output = power_shell_admin_prompt(command)?;
+        handle_output(output)?;
+    }
 
     Ok(())
 }
