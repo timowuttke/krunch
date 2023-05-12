@@ -42,7 +42,7 @@ pub async fn cli_install() -> Result<()> {
         println!("{}", err)
     }
 
-    print!("{:<35}", "creating local CA");
+    print!("{:<35}", "creating CA and TLS secret");
     io::stdout().flush().unwrap();
     if let Err(err) = create_ca_and_tls().await {
         println!("{}", err)
