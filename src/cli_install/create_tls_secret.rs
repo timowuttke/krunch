@@ -1,6 +1,6 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
 use crate::shared::{
-    get_k8s_client, handle_output, restore_term, save_term, should_continue_as_admin,
+    get_minikube_client, handle_output, restore_term, save_term, should_continue_as_admin,
     MINIKUBE_HOST, TLS_SECRET,
 };
 use anyhow::{anyhow, Result};
@@ -54,7 +54,7 @@ async fn install_tls_secret() -> Result<()> {
     fs::remove_file(format!("{}-key.pem", MINIKUBE_HOST)).unwrap_or(());
     fs::remove_file(format!("{}.pem", MINIKUBE_HOST)).unwrap_or(());
 
-    let client = get_k8s_client().await?;
+    let client = get_minikube_client().await?;
     let secrets: Api<Secret> = Api::namespaced(client, "default");
 
     let secret: Secret = serde_json::from_value(serde_json::json!({

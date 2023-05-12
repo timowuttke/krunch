@@ -1,6 +1,7 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
 use crate::shared::{
-    get_k8s_client, handle_output, restore_term, save_term, should_continue_as_admin, TLS_SECRET,
+    get_minikube_client, handle_output, restore_term, save_term, should_continue_as_admin,
+    TLS_SECRET,
 };
 use anyhow::{anyhow, Result};
 
@@ -39,7 +40,7 @@ fn remove_local_ca() -> Result<()> {
 }
 
 async fn delete_tls_secret() -> Result<()> {
-    let client = get_k8s_client().await?;
+    let client = get_minikube_client().await?;
     let secrets: Api<Secret> = Api::namespaced(client, "default");
 
     let result = secrets.delete(TLS_SECRET, &DeleteParams::default()).await;

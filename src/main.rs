@@ -1,6 +1,7 @@
 use crate::cli_install::cli_install;
 use crate::cli_remove::cli_remove;
 use crate::cli_version::cli_version;
+use crate::shared::get_minikube_client;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -29,11 +30,15 @@ enum Commands {
 async fn main() -> Result<()> {
     let args = Cli::parse();
 
-    // todo: ensure minikube is running
-
     match &args.command {
-        Commands::Install => cli_install().await?,
-        Commands::Remove => cli_remove().await?,
+        Commands::Install => {
+            get_minikube_client().await?;
+            cli_install().await?
+        }
+        Commands::Remove => {
+            get_minikube_client().await?;
+            cli_remove().await?
+        }
         Commands::Version => cli_version(),
     }
 

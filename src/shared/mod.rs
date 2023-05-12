@@ -6,6 +6,7 @@ use crossterm::{
     style::Print,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
+use kube::config;
 use std::io::{stdout, Write};
 use std::process::{Command, Output};
 
@@ -44,7 +45,7 @@ pub fn handle_output(output: Output) -> Result<String> {
     Ok(stdout)
 }
 
-pub async fn get_k8s_client() -> Result<kube::Client> {
+pub async fn get_minikube_client() -> Result<kube::Client> {
     let client = match kube::Client::try_default().await {
         Ok(inner) => inner,
         Err(err) => {
@@ -56,7 +57,7 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
     };
 
     match client.apiserver_version().await {
-        Ok(inner) => inner,
+        Ok(_) => (),
         Err(_) => {
             return Err(anyhow!(
                 "failed to connect to cluster, is minikube running?"
@@ -64,7 +65,13 @@ pub async fn get_k8s_client() -> Result<kube::Client> {
         }
     };
 
-    // ToDo: make sure the context is minikube
+    let kubeconfig = config::Kubeconfig::read()?;
+    if kubeconfig.current_context != Some("minikube".to_string()) {
+        return Err(anyhow!(
+            "not connected to minikube, current context is {}",
+            kubeconfig.current_context.unwrap()
+        ));
+    }
 
     Ok(client)
 }
