@@ -26,8 +26,7 @@ fn remove_local_ca() -> Result<()> {
     if mkcert_path.exists() {
         save_term()?;
 
-        let output = Command::new("sudo")
-            .arg(mkcert_path)
+        let output = Command::new(mkcert_path)
             .arg("-uninstall")
             .output()
             .expect("failed to execute process");

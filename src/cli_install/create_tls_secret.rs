@@ -28,8 +28,7 @@ pub async fn create_ca_and_install_tls_in_cluster() -> Result<()> {
 fn install_local_ca() -> Result<()> {
     save_term()?;
 
-    let output = Command::new("sudo")
-        .arg(get_binary_path(Binary::Mkcert)?)
+    let output = Command::new(get_binary_path(Binary::Mkcert)?)
         .arg("--install")
         .output()
         .expect("failed to execute process");
