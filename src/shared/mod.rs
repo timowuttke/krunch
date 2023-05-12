@@ -93,9 +93,8 @@ pub fn should_continue_as_admin() -> Result<bool> {
     save_term()?;
 
     print!("Continue as admin (y/N)? ");
-    let _ = stdout().flush();
+    stdout().flush().unwrap();
 
-    // Switch to raw mode
     enable_raw_mode()?;
 
     let input = ' ';
@@ -135,20 +134,18 @@ pub fn save_term() -> Result<()> {
 }
 
 pub fn restore_term(lines: u8) -> Result<()> {
-    let mut stdout = stdout();
-
     let lines_up = match lines {
         0 => "".to_string(),
         _ => format!("\x1B[{}A", lines),
     };
 
     execute!(
-        stdout,
+        stdout(),
         RestorePosition,
         Print(lines_up),
         Clear(ClearType::UntilNewLine),
     )?;
-    stdout.flush().unwrap();
+    stdout().flush().unwrap();
 
     Ok(())
 }
