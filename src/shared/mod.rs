@@ -1,8 +1,11 @@
+use crate::shared::file_folder_paths::get_etc_hosts_path;
 use anyhow::{anyhow, Result};
 use kube::config;
+use std::fs;
 use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
 use std::process::{Command, Output};
+use tempfile::Builder;
 
 pub mod download_urls;
 pub mod file_folder_paths;
@@ -70,7 +73,28 @@ pub async fn get_minikube_client() -> Result<kube::Client> {
     Ok(client)
 }
 
-pub fn copy_as_admin_windows(from: PathBuf, to: PathBuf) -> Result<()> {
+pub fn update_etc_hosts(data: String) -> Result<()> {
+    let tmp_file = Builder::new().tempfile()?;
+    fs::write(&tmp_file, &data)?;
+
+    if cfg!(target_family = "unix") {
+        copy_as_admin_unix(&tmp_file.path().to_path_buf(), &get_etc_hosts_path()?)?;
+    } else if cfg!(target_family = "windows") {
+        copy_as_admin_windows(&tmp_file.path().to_path_buf(), &get_etc_hosts_path()?)?;
+    }
+
+    Ok(())
+}
+
+fn copy_as_admin_unix(from: &PathBuf, to: &PathBuf) -> Result<()> {
+    let output = Command::new("sudo").arg("mv").arg(from).arg(to).output()?;
+
+    handle_output(output)?;
+
+    Ok(())
+}
+
+fn copy_as_admin_windows(from: &PathBuf, to: &PathBuf) -> Result<()> {
     let copy_command = format!(
         "'Copy-Item -Path \"{}\" -Destination \"{}\" -Force'",
         from.display(),

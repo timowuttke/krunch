@@ -1,94 +1,53 @@
 use crate::shared::file_folder_paths::{get_binary_path, get_etc_hosts_path, Binary};
-use crate::shared::{copy_as_admin_windows, handle_output};
-
+use crate::shared::{handle_output, update_etc_hosts};
 use anyhow::Result;
 use std::fs;
 use std::process::Command;
-use tempfile::Builder;
 
 pub fn add_dns_for_minikube() -> Result<()> {
-    if cfg!(target_family = "unix") {
-        add_dns_for_minikube_unix()?;
-    } else if cfg!(target_family = "windows") {
-        add_dns_for_minikube_windows()?;
+    let etc_hosts_path = get_etc_hosts_path()?;
+    let mut data = fs::read_to_string(&etc_hosts_path)?;
+    data = data.trim().to_string();
+
+    let minikube_ip = get_minikube_ip()?;
+
+    if data.contains(&minikube_ip) {
+        println!("already done");
+    } else if data.contains("k8s.local") {
+        let data = update_dns_data(data, minikube_ip);
+        update_etc_hosts(data)?;
+
+        println!("minikube ip updated");
+    } else {
+        let data = add_dns_data(data, minikube_ip);
+        update_etc_hosts(data)?;
+
+        println!("success");
     }
 
     Ok(())
 }
 
-fn add_dns_for_minikube_unix() -> Result<()> {
-    let etc_hosts_path = get_etc_hosts_path()?;
-    let mut data = fs::read_to_string(&etc_hosts_path)?;
-    data = data.trim().to_string();
+fn add_dns_data(mut data: String, minikube_ip: String) -> String {
+    data.push_str("\n\n");
 
-    let minikube_ip = get_minikube_ip()?;
+    let re = regex::Regex::new(r"(?m)^\n").unwrap();
+    data = re
+        .replace(&data, format!("{}\tk8s.local\n\n", minikube_ip))
+        .to_string();
 
-    if data.contains(&minikube_ip) {
-        println!("already done");
-    } else {
-        let (data, message) = update_dns_data(data, minikube_ip);
-
-        let tmp_file = Builder::new().tempfile()?;
-        fs::write(&tmp_file, &data)?;
-
-        let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
-
-        let output = Command::new("sudo")
-            .arg("mv")
-            .arg(tmp_path)
-            .arg(&etc_hosts_path)
-            .output()?;
-        handle_output(output)?;
-
-        println!("{}", message);
-    };
-
-    Ok(())
+    data.trim().to_string()
 }
 
-//todo: test this
-fn add_dns_for_minikube_windows() -> Result<()> {
-    let etc_hosts_path = get_etc_hosts_path()?;
-    let mut data = fs::read_to_string(&etc_hosts_path)?;
-    data = data.trim().to_string();
+fn update_dns_data(mut data: String, minikube_ip: String) -> String {
+    data.push_str("\n\n");
 
-    let minikube_ip = get_minikube_ip()?;
+    let re = regex::Regex::new(r"(?m)^.*k8s.local\n").unwrap();
+    data = re
+        .replace(&data, format!("{}\tk8s.local\n", minikube_ip))
+        .to_string();
 
-    if data.contains(&minikube_ip) {
-        println!("already done");
-    } else {
-        let (data, message) = update_dns_data(data, minikube_ip);
-
-        let tmp_file = Builder::new().tempfile()?;
-        fs::write(&tmp_file, &data)?;
-
-        copy_as_admin_windows(tmp_file.path().to_path_buf(), etc_hosts_path)?;
-
-        println!("{}", message);
-    };
-
-    Ok(())
-}
-
-fn update_dns_data(mut data: String, minikube_ip: String) -> (String, String) {
-    let message: &str;
-
-    if data.contains("k8s.local") {
-        let re = regex::Regex::new(r"(?m)^.*k8s.local\n").unwrap();
-        data = re
-            .replace(&data, format!("{}\tk8s.local\n", minikube_ip))
-            .to_string();
-        message = "minikube ip updated";
-    } else {
-        let re = regex::Regex::new(r"(?m)^\n").unwrap();
-        data = re
-            .replace(&data, format!("{}\tk8s.local\n\n", minikube_ip))
-            .to_string();
-
-        message = "success";
-    };
-
-    (data, message.to_string())
+    data.trim().to_string()
 }
 
 fn get_minikube_ip() -> Result<String> {

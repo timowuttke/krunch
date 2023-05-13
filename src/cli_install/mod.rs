@@ -10,7 +10,7 @@ use std::io;
 use std::io::Write;
 
 mod bin_folder_to_path;
-pub mod create_ca_and_tls;
+mod create_ca_and_tls;
 mod dns_for_minikube;
 mod docker_to_minikube;
 mod download_binaries;
