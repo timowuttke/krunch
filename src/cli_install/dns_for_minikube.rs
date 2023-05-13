@@ -1,5 +1,5 @@
 use crate::shared::file_folder_paths::{get_binary_path, get_etc_hosts_path, Binary};
-use crate::shared::{handle_output, update_etc_hosts};
+use crate::shared::{handle_output, update_etc_hosts, LINE_ENDING};
 use anyhow::Result;
 use std::fs;
 use std::process::Command;
@@ -29,22 +29,27 @@ pub fn add_dns_for_minikube() -> Result<()> {
 }
 
 fn add_dns_data(mut data: String, minikube_ip: String) -> String {
-    data.push_str("\n\n");
+    data.push_str(LINE_ENDING);
+    data.push_str(LINE_ENDING);
 
-    let re = regex::Regex::new(r"(?m)^\n").unwrap();
+    let re = regex::Regex::new(&format!(r"(?m)^{}", LINE_ENDING)).unwrap();
     data = re
-        .replace(&data, format!("{}\tk8s.local\n\n", minikube_ip))
+        .replace(
+            &data,
+            format!("{}\tk8s.local{}{}", minikube_ip, LINE_ENDING, LINE_ENDING),
+        )
         .to_string();
 
     data.trim().to_string()
 }
 
 fn update_dns_data(mut data: String, minikube_ip: String) -> String {
-    data.push_str("\n\n");
+    data.push_str(LINE_ENDING);
+    data.push_str(LINE_ENDING);
 
-    let re = regex::Regex::new(r"(?m)^.*k8s.local\n").unwrap();
+    let re = regex::Regex::new(&format!(r"(?m)^.*k8s.local{}", LINE_ENDING)).unwrap();
     data = re
-        .replace(&data, format!("{}\tk8s.local\n", minikube_ip))
+        .replace(&data, format!("{}\tk8s.local{}", minikube_ip, LINE_ENDING))
         .to_string();
 
     data.trim().to_string()

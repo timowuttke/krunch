@@ -11,6 +11,10 @@ pub mod download_urls;
 pub mod file_folder_paths;
 pub mod windows_registry;
 
+#[cfg(windows)]
+pub const LINE_ENDING: &'static str = "\r\n";
+#[cfg(not(windows))]
+pub const LINE_ENDING: &'static str = "\n";
 pub const MINIKUBE_HOST: &'static str = "k8s.local";
 pub const TLS_SECRET: &'static str = "tls";
 
