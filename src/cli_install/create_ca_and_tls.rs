@@ -1,7 +1,6 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
 use crate::shared::{
-    get_minikube_client, handle_output, power_shell_admin_prompt, restore_term, save_term,
-    should_continue_as_admin, MINIKUBE_HOST, TLS_SECRET,
+    get_minikube_client, handle_output, power_shell_admin_prompt, MINIKUBE_HOST, TLS_SECRET,
 };
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
@@ -15,10 +14,6 @@ use std::io::Read;
 use std::process::Command;
 
 pub async fn create_ca_and_tls() -> Result<()> {
-    if !should_continue_as_admin()? {
-        return Err(anyhow!("skipped"));
-    }
-
     if cfg!(target_family = "unix") {
         install_local_ca_unix()?;
     } else if cfg!(target_family = "windows") {
@@ -31,15 +26,12 @@ pub async fn create_ca_and_tls() -> Result<()> {
 }
 
 fn install_local_ca_unix() -> Result<()> {
-    save_term()?;
-
     let output = Command::new("sudo")
         .arg(get_binary_path(Binary::Mkcert)?)
         .arg("--install")
         .output()
         .expect("failed to execute process");
 
-    restore_term(1)?;
     handle_output(output)?;
 
     Ok(())
@@ -112,7 +104,6 @@ fn handle_resource_creation_result<T>(result: kube::Result<T, Error>) -> Result<
             }
         }
         Err(err) => {
-            println!("failure");
             return Err(anyhow!(err));
         }
     }

@@ -1,10 +1,6 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{
-    get_minikube_client, handle_output, power_shell_admin_prompt, restore_term, save_term,
-    should_continue_as_admin, TLS_SECRET,
-};
+use crate::shared::{get_minikube_client, handle_output, power_shell_admin_prompt, TLS_SECRET};
 use anyhow::{anyhow, Result};
-
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::DeleteParams;
 use kube::{Api, Error};
@@ -14,10 +10,6 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
     let mkcert_path = get_binary_path(Binary::Mkcert)?;
 
     if mkcert_path.exists() {
-        if !should_continue_as_admin()? {
-            return Err(anyhow!("skipped"));
-        }
-
         if cfg!(target_family = "unix") {
             remove_local_ca_unix()?;
         } else if cfg!(target_family = "windows") {
@@ -33,15 +25,12 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
 }
 
 fn remove_local_ca_unix() -> Result<()> {
-    save_term()?;
-
     let output = Command::new("sudo")
         .arg(get_binary_path(Binary::Mkcert)?)
         .arg("--uninstall")
         .output()
         .expect("failed to execute process");
 
-    restore_term(1)?;
     handle_output(output)?;
 
     Ok(())
@@ -76,7 +65,6 @@ fn handle_resource_deletion_result<T>(result: kube::Result<T, Error>) -> Result<
             }
         }
         Err(err) => {
-            println!("failure");
             return Err(anyhow!(err));
         }
     }

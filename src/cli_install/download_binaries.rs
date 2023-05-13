@@ -6,10 +6,8 @@ use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Url;
 use std::cmp::min;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
 use std::path::PathBuf;
 use std::{fs, io};
 use tar::Archive;
@@ -21,7 +19,7 @@ pub async fn download_all() -> Result<()> {
     let downloads = get_downloads();
 
     for download in downloads {
-        print!("downloading {:<23}", &download.target);
+        print!("{:<35}", format!("downloading {}", &download.target));
         io::stdout().flush().unwrap();
 
         if download.target.starts_with("docker-buildx")
@@ -32,7 +30,7 @@ pub async fn download_all() -> Result<()> {
             println!("already done")
         } else {
             download_file(download.source, download.target.as_str()).await?;
-            println!("\rdownloading {:<23}success", &download.target);
+            println!("{:<35}success", format!("downloading {}", &download.target));
         }
     }
 
@@ -140,7 +138,7 @@ fn get_progress_bar(total_size: u64, target_name: &str) -> ProgressBar {
             .progress_chars("#>-"),
     );
 
-    pb.set_message(&format!("downloading {:<23}", target_name));
+    pb.set_message(&format!("{:<35}", format!("downloading {}", target_name)));
 
     pb
 }

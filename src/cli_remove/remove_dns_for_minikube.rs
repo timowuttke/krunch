@@ -1,10 +1,6 @@
 use crate::shared::file_folder_paths::get_etc_hosts_path;
-use crate::shared::{
-    handle_output, power_shell_admin_prompt, restore_term, save_term, should_continue_as_admin,
-    MINIKUBE_HOST,
-};
-
-use anyhow::{anyhow, Result};
+use crate::shared::{handle_output, power_shell_admin_prompt, MINIKUBE_HOST};
+use anyhow::Result;
 use std::fs;
 use std::process::Command;
 use tempfile::Builder;
@@ -27,9 +23,6 @@ fn remove_dns_for_minikube_unix() -> Result<()> {
     if !data.contains(MINIKUBE_HOST) {
         println!("nothing to do");
     } else {
-        if !should_continue_as_admin()? {
-            return Err(anyhow!("skipped"));
-        }
         data = remove_dns_data(data);
 
         let tmp_file = Builder::new().tempfile()?;
@@ -37,7 +30,6 @@ fn remove_dns_for_minikube_unix() -> Result<()> {
 
         let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
 
-        save_term()?;
         let output = Command::new("sudo")
             .arg("mv")
             .arg(tmp_path)
@@ -45,7 +37,6 @@ fn remove_dns_for_minikube_unix() -> Result<()> {
             .output()?;
         handle_output(output)?;
 
-        restore_term(1)?;
         println!("success")
     }
 
@@ -61,10 +52,6 @@ fn remove_dns_for_minikube_windows() -> Result<()> {
     if !data.contains(MINIKUBE_HOST) {
         println!("nothing to do");
     } else {
-        if !should_continue_as_admin()? {
-            return Err(anyhow!("skipped"));
-        }
-
         data = remove_dns_data(data);
 
         let tmp_file = Builder::new().tempfile()?;

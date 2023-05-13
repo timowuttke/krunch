@@ -4,6 +4,7 @@ use crate::cli_install::dns_for_minikube::add_dns_for_minikube;
 use crate::cli_install::docker_to_minikube::point_docker_to_minikube;
 use crate::cli_install::download_binaries::download_all;
 use crate::cli_install::enable_ingress::enable_ingress_addon_if_needed;
+use crate::shared::should_continue_as_admin;
 use anyhow::Result;
 use std::io;
 use std::io::Write;
@@ -36,17 +37,25 @@ pub async fn cli_install() -> Result<()> {
         println!("{}", err)
     };
 
-    print!("{:<35}", "creating DNS entry");
-    io::stdout().flush().unwrap();
-    if let Err(err) = add_dns_for_minikube() {
-        println!("{}", err)
-    }
+    if should_continue_as_admin()? {
+        print!("{:<35}", "creating DNS entry");
+        io::stdout().flush().unwrap();
+        if let Err(err) = add_dns_for_minikube() {
+            println!("{}", err)
+        }
 
-    print!("{:<35}", "creating CA and TLS secret");
-    io::stdout().flush().unwrap();
-    if let Err(err) = create_ca_and_tls().await {
-        println!("{}", err)
-    };
+        print!("{:<35}", "creating CA and TLS secret");
+        io::stdout().flush().unwrap();
+        if let Err(err) = create_ca_and_tls().await {
+            println!("{}", err)
+        };
+    } else {
+        println!("{:<35}{}", "creating DNS entry", "skipped (not admin)");
+        println!(
+            "{:<35}{}",
+            "creating CA and TLS secret", "skipped (not admin)"
+        );
+    }
 
     Ok(())
 }
