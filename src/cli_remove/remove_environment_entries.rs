@@ -56,6 +56,7 @@ fn remove_environment_entries_unix() -> Result<()> {
     Ok(())
 }
 
+// todo: always says "success"
 fn remove_environment_entries_windows() -> Result<()> {
     let delete_result: Result<_> = (|| {
         delete_from_environment("DOCKER_TLS_VERIFY")?;
