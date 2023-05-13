@@ -54,7 +54,7 @@ pub fn read_from_environment(key: &str) -> Result<String> {
 }
 
 pub fn delete_from_environment(key: &str) -> Result<()> {
-    Command::new("reg")
+    let output = Command::new("reg")
         .arg("delete")
         .arg("HKEY_CURRENT_USER\\Environment")
         .arg("/v")
@@ -62,6 +62,8 @@ pub fn delete_from_environment(key: &str) -> Result<()> {
         .arg("/f")
         .output()
         .expect("failed to execute process");
+
+    handle_output(output)?;
 
     Ok(())
 }

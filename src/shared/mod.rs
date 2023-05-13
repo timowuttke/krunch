@@ -72,9 +72,10 @@ pub async fn get_minikube_client() -> Result<kube::Client> {
 pub fn power_shell_admin_prompt(command: String) -> Result<Output> {
     let output = Command::new("powershell")
         .arg("Start-Process")
+        .arg("-FilePath")
         .arg("cmd.exe")
-        .arg("/C")
-        .arg(command)
+        .arg("-ArgumentList")
+        .arg(format!("/C {}", command))
         .arg("-Verb")
         .arg("RunAs")
         .output()?;
@@ -82,28 +83,34 @@ pub fn power_shell_admin_prompt(command: String) -> Result<Output> {
     Ok(output)
 }
 
-// todo more user friendly
 pub fn should_continue_as_admin() -> Result<bool> {
     let mut input = String::new();
 
-    print!(
-        "Modifying etc/hosts and the local certificate store requires admin rights. Continue (y/N)? "
-    );
-    stdout().flush()?;
+    loop {
+        print!(
+            "Modifying etc/hosts and the local certificate store requires admin rights. Continue (y/N)? "
+        );
+        stdout().flush()?;
 
-    stdin().read_line(&mut input)?;
+        input.clear();
+        stdin().read_line(&mut input)?;
 
-    match input.trim() {
-        "y" | "Y" => {
-            if cfg!(target_family = "unix") {
-                let output = Command::new("sudo").arg("-k").output()?;
-                handle_output(output)?;
+        match input.trim() {
+            "y" | "Y" => {
+                if cfg!(target_family = "unix") {
+                    let output = Command::new("sudo").arg("-k").output()?;
+                    handle_output(output)?;
 
-                let output = Command::new("sudo").arg("true").output()?;
-                handle_output(output)?;
+                    let output = Command::new("sudo").arg("true").output()?;
+                    handle_output(output)?;
+                }
+                return Ok(true);
             }
-            Ok(true)
+            "n" | "N" | "" => return Ok(false),
+            _ => {
+                println!("Invalid response. Please enter 'y', 'Y', 'n', 'N', or press enter.");
+                continue;
+            }
         }
-        _ => Ok(false),
     }
 }
