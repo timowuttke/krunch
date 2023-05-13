@@ -36,15 +36,6 @@ pub async fn download_all() -> Result<()> {
         }
     }
 
-    match move_and_rename_krunch_executable() {
-        Ok(_) => {}
-        Err(err) => println!(
-            "failed to move krunch executable to {}: {}",
-            get_bin_folder()?.display(),
-            err
-        ),
-    }
-
     Ok(())
 }
 
@@ -75,21 +66,6 @@ async fn download_file(url: Url, target_name: &str) -> Result<()> {
 
     drop(tmp_file);
     tmp_dir.close()?;
-
-    Ok(())
-}
-
-fn move_and_rename_krunch_executable() -> Result<()> {
-    let extension = if cfg!(target_os = "windows") {
-        ".exe"
-    } else {
-        ""
-    };
-
-    let bin_folder = get_bin_folder()?;
-    let current_exe_path = env::current_exe()?;
-    let target_path = Path::new(&bin_folder).join(format!("krunch{}", extension));
-    fs::rename(&current_exe_path, &target_path)?;
 
     Ok(())
 }

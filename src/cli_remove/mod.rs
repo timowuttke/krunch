@@ -24,24 +24,17 @@ pub async fn cli_remove() -> Result<()> {
         println!("{}", err)
     };
 
-    let mut should_delete_bins = true;
-
     print!("{:<35}", "deleting CA and TLS secret");
     io::stdout().flush().unwrap();
     if let Err(err) = remove_ca_and_tls_secret().await {
-        should_delete_bins = false;
         println!("{}", err)
     };
 
     print!("{:<35}", "deleting downloaded files");
     io::stdout().flush().unwrap();
-    if should_delete_bins {
-        if let Err(err) = remove_binaries() {
-            println!("{}", err)
-        };
-    } else {
-        println!("skipped")
-    }
+    if let Err(err) = remove_binaries() {
+        println!("{}", err)
+    };
 
     Ok(())
 }
