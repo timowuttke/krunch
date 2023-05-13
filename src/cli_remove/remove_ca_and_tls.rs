@@ -1,5 +1,5 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{get_minikube_client, handle_output, power_shell_admin_prompt, TLS_SECRET};
+use crate::shared::{get_minikube_client, handle_output, TLS_SECRET};
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::core::v1::Secret;
 use kube::api::DeleteParams;
@@ -10,12 +10,7 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
     let mkcert_path = get_binary_path(Binary::Mkcert)?;
 
     if mkcert_path.exists() {
-        if cfg!(target_family = "unix") {
-            remove_local_ca_unix()?;
-        } else if cfg!(target_family = "windows") {
-            remove_local_ca_windows()?;
-        }
-
+        remove_local_ca()?;
         delete_tls_secret().await?;
     } else {
         println!("nothing to do");
@@ -24,22 +19,12 @@ pub async fn remove_ca_and_tls_secret() -> Result<()> {
     Ok(())
 }
 
-fn remove_local_ca_unix() -> Result<()> {
-    let output = Command::new("sudo")
-        .arg(get_binary_path(Binary::Mkcert)?)
-        .arg("--uninstall")
+fn remove_local_ca() -> Result<()> {
+    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+        .arg("-uninstall")
         .output()
         .expect("failed to execute process");
 
-    handle_output(output)?;
-
-    Ok(())
-}
-
-fn remove_local_ca_windows() -> Result<()> {
-    let command = format!("{} --uninstall", get_binary_path(Binary::Mkcert)?.display());
-
-    let output = power_shell_admin_prompt(command)?;
     handle_output(output)?;
 
     Ok(())

@@ -1,5 +1,5 @@
 use crate::shared::file_folder_paths::get_etc_hosts_path;
-use crate::shared::{handle_output, power_shell_admin_prompt, MINIKUBE_HOST};
+use crate::shared::{copy_as_admin_windows, handle_output, MINIKUBE_HOST};
 use anyhow::Result;
 use std::fs;
 use std::process::Command;
@@ -57,11 +57,7 @@ fn remove_dns_for_minikube_windows() -> Result<()> {
         let tmp_file = Builder::new().tempfile()?;
         fs::write(&tmp_file, &data)?;
 
-        let tmp_path = tmp_file.path().to_str().expect("failed to parse tmp path");
-        let copy_command = format!("copy /Y \"{}\" \"{}\"", tmp_path, etc_hosts_path.display());
-
-        let output = power_shell_admin_prompt(copy_command)?;
-        handle_output(output)?;
+        copy_as_admin_windows(tmp_file.path().to_path_buf(), etc_hosts_path)?;
 
         println!("success")
     };

@@ -1,7 +1,5 @@
 use crate::shared::file_folder_paths::{get_binary_path, Binary};
-use crate::shared::{
-    get_minikube_client, handle_output, power_shell_admin_prompt, MINIKUBE_HOST, TLS_SECRET,
-};
+use crate::shared::{get_minikube_client, handle_output, MINIKUBE_HOST, TLS_SECRET};
 use anyhow::{anyhow, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -14,33 +12,19 @@ use std::io::Read;
 use std::process::Command;
 
 pub async fn create_ca_and_tls() -> Result<()> {
-    if cfg!(target_family = "unix") {
-        install_local_ca_unix()?;
-    } else if cfg!(target_family = "windows") {
-        install_local_ca_windows()?;
-    }
+    install_local_ca()?;
     create_certificate_files()?;
     install_tls_secret().await?;
 
     Ok(())
 }
 
-fn install_local_ca_unix() -> Result<()> {
-    let output = Command::new("sudo")
-        .arg(get_binary_path(Binary::Mkcert)?)
-        .arg("--install")
+fn install_local_ca() -> Result<()> {
+    let output = Command::new(get_binary_path(Binary::Mkcert)?)
+        .arg("-install")
         .output()
         .expect("failed to execute process");
 
-    handle_output(output)?;
-
-    Ok(())
-}
-
-fn install_local_ca_windows() -> Result<()> {
-    let command = format!("{} --install", get_binary_path(Binary::Mkcert)?.display());
-
-    let output = power_shell_admin_prompt(command)?;
     handle_output(output)?;
 
     Ok(())

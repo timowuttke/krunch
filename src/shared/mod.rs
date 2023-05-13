@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use kube::config;
 use std::io::{stdin, stdout, Write};
+use std::path::PathBuf;
 use std::process::{Command, Output};
 
 pub mod download_urls;
@@ -69,18 +70,26 @@ pub async fn get_minikube_client() -> Result<kube::Client> {
     Ok(client)
 }
 
-pub fn power_shell_admin_prompt(command: String) -> Result<Output> {
+pub fn copy_as_admin_windows(from: PathBuf, to: PathBuf) -> Result<()> {
+    let copy_command = format!(
+        "'Copy-Item -Path \"{}\" -Destination \"{}\" -Force'",
+        from.display(),
+        to.display()
+    );
+
     let output = Command::new("powershell")
         .arg("Start-Process")
         .arg("-FilePath")
-        .arg("cmd.exe")
+        .arg("powershell")
         .arg("-ArgumentList")
-        .arg(format!("/C {}", command))
+        .arg(&copy_command)
         .arg("-Verb")
         .arg("RunAs")
         .output()?;
 
-    Ok(output)
+    handle_output(output)?;
+
+    Ok(())
 }
 
 pub fn should_continue_as_admin() -> Result<bool> {
