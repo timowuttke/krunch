@@ -2,7 +2,8 @@ use crate::shared::file_folder_paths::get_etc_hosts_path;
 use anyhow::{anyhow, Result};
 use kube::config;
 use std::fs;
-use std::io::{stdin, stdout, Write};
+use std::fs::File;
+use std::io::{stdin, stdout, Read, Write};
 use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::Builder;
@@ -99,23 +100,38 @@ fn copy_as_admin_unix(from: &PathBuf, to: &PathBuf) -> Result<()> {
 }
 
 fn copy_as_admin_windows(from: &PathBuf, to: &PathBuf) -> Result<()> {
+    let tmp_dir = Builder::new().tempdir()?;
+    let tmp_file_path = tmp_dir.path().join("krunch");
+
     let copy_command = format!(
-        "'Copy-Item -Path \"{}\" -Destination \"{}\" -Force'",
+        "'Copy-Item -Path \"{}\" -Destination \"{}\" -Force 2> \"{}\"'",
         from.display(),
-        to.display()
+        to.display(),
+        tmp_file_path.display()
     );
 
     let output = Command::new("powershell")
         .arg("Start-Process")
         .arg("-FilePath")
         .arg("powershell")
-        .arg("-ArgumentList")
-        .arg(&copy_command)
+        .arg("-Wait")
         .arg("-Verb")
         .arg("RunAs")
-        .output()?;
+        .arg("-ArgumentList")
+        .arg(&copy_command)
+        .output();
 
-    handle_output(output)?;
+    let mut file = File::open(&tmp_file_path)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    let contents = String::from_utf8_lossy(&buffer);
+    tmp_dir.close()?;
+
+    if !contents.is_empty() {
+        return Err(anyhow::anyhow!("copy failure: {}", contents));
+    }
+
+    handle_output(output?)?;
 
     Ok(())
 }
