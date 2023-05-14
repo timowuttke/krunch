@@ -110,28 +110,36 @@ fn copy_as_admin_windows(from: &PathBuf, to: &PathBuf) -> Result<()> {
         tmp_file_path.display()
     );
 
-    let output = Command::new("powershell")
-        .arg("Start-Process")
-        .arg("-FilePath")
-        .arg("powershell")
-        .arg("-Wait")
-        .arg("-Verb")
-        .arg("RunAs")
-        .arg("-ArgumentList")
-        .arg(&copy_command)
-        .output();
+    let result = {
+        let output = Command::new("powershell")
+            .arg("Start-Process")
+            .arg("-FilePath")
+            .arg("powershell")
+            .arg("-WindowStyle")
+            .arg("Hidden")
+            .arg("-Wait")
+            .arg("-Verb")
+            .arg("RunAs")
+            .arg("-ArgumentList")
+            .arg(&copy_command)
+            .output()?;
 
-    let mut file = File::open(&tmp_file_path)?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-    let contents = String::from_utf8_lossy(&buffer);
+        handle_output(output)?;
+
+        let mut file = File::open(&tmp_file_path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        let contents = String::from_utf8_lossy(&buffer);
+
+        if contents.is_empty() {
+            Ok(())
+        } else {
+            Err(anyhow!("copy failure: {}", contents))
+        }
+    };
+
     tmp_dir.close()?;
-
-    if !contents.is_empty() {
-        return Err(anyhow::anyhow!("copy failure: {}", contents));
-    }
-
-    handle_output(output?)?;
+    result?;
 
     Ok(())
 }
