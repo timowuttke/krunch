@@ -149,7 +149,7 @@ pub fn should_continue_as_admin() -> Result<bool> {
 
     loop {
         print!(
-            "Modifying etc/hosts and the local certificate store requires admin rights. Continue (y/N)? "
+            "Warning: Modifying etc/hosts and the root store requires admin rights. Continue (y/N)? "
         );
         stdout().flush()?;
 

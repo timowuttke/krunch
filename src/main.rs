@@ -18,7 +18,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Setup a minikube based dev setup
+    /// Configure everything needed for a minikube based dev setup
     Install,
     /// Remove all files and configuration created by krunch
     Remove,
