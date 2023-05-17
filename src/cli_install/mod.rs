@@ -14,10 +14,16 @@ mod create_ca_and_tls;
 mod dns_for_minikube;
 mod docker_to_minikube;
 mod download_binaries;
+mod download_urls;
 mod enable_ingress;
+mod get_versions;
 
 pub async fn cli_install() -> Result<()> {
-    download_all().await?;
+    print!("{:<35}", "downloading tools");
+    io::stdout().flush().unwrap();
+    if let Err(err) = download_all().await {
+        println!("{}", err)
+    }
 
     print!("{:<35}", "adding tools to PATH");
     io::stdout().flush().unwrap();

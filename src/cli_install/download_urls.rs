@@ -1,7 +1,5 @@
-use crate::shared::{
-    BUILDX_VERSION, DOCKER_VERSION, HELM_VERSION, K9S_VERSION, KUBECTL_VERSION, MKCERT_VERSION,
-    SKAFFOLD_VERSION,
-};
+use crate::cli_install::get_versions::{get_actual_versions, get_expected_versions};
+use anyhow::{anyhow, Result};
 use reqwest::Url;
 
 pub struct Download {
@@ -20,7 +18,7 @@ enum TargetArch {
     Arm64,
 }
 
-pub fn get_downloads() -> Vec<Download> {
+pub fn get_necessary_downloads() -> Result<Vec<Download>> {
     let os;
     let arch;
     let ext_str;
@@ -45,45 +43,92 @@ pub fn get_downloads() -> Vec<Download> {
         panic!("architecture not supported")
     };
 
-    let docker = Download {
-        target: format!("docker{}", ext_str),
-        source: get_docker_url(&os, &arch, DOCKER_VERSION),
-    };
+    let mut necessary_downloads = vec![];
 
-    let buildx = Download {
-        target: format!("docker-buildx{}", ext_str),
-        source: get_buildx_url(&os, &arch, BUILDX_VERSION),
-    };
+    let expected_versions = get_expected_versions()?;
+    let actual_versions = get_actual_versions()?;
 
-    let kubectl = Download {
-        target: format!("kubectl{}", ext_str),
-        source: get_kubectl_url(&os, &arch, KUBECTL_VERSION),
-    };
+    if expected_versions.docker != actual_versions.docker {
+        let docker_version = expected_versions
+            .docker
+            .ok_or(anyhow!("failed to read config"))?;
+        let docker = Download {
+            target: format!("docker{}", ext_str),
+            source: get_docker_url(&os, &arch, docker_version),
+        };
+        necessary_downloads.push(docker);
+    }
 
-    let helm = Download {
-        target: format!("helm{}", ext_str),
-        source: get_helm_url(&os, &arch, HELM_VERSION),
-    };
+    if expected_versions.buildx != actual_versions.buildx {
+        let buildx_version = expected_versions
+            .buildx
+            .ok_or(anyhow!("failed to read config"))?;
+        let buildx = Download {
+            target: format!("docker-buildx{}", ext_str),
+            source: get_buildx_url(&os, &arch, buildx_version),
+        };
+        necessary_downloads.push(buildx);
+    }
 
-    let mkcert = Download {
-        target: format!("mkcert{}", ext_str),
-        source: get_mkcert_url(&os, &arch, MKCERT_VERSION),
-    };
+    if expected_versions.kubectl != actual_versions.kubectl {
+        let kubectl_version = expected_versions
+            .kubectl
+            .ok_or(anyhow!("failed to read config"))?;
+        let kubectl = Download {
+            target: format!("kubectl{}", ext_str),
+            source: get_kubectl_url(&os, &arch, kubectl_version),
+        };
+        necessary_downloads.push(kubectl);
+    }
 
-    let skaffold = Download {
-        target: format!("skaffold{}", ext_str),
-        source: get_skaffold_url(&os, &arch, SKAFFOLD_VERSION),
-    };
+    if expected_versions.helm != actual_versions.helm {
+        let helm_version = expected_versions
+            .helm
+            .ok_or(anyhow!("failed to read config"))?;
+        let helm = Download {
+            target: format!("helm{}", ext_str),
+            source: get_helm_url(&os, &arch, helm_version),
+        };
+        necessary_downloads.push(helm);
+    }
 
-    let k9s = Download {
-        target: format!("k9s{}", ext_str),
-        source: get_k9s_url(&os, &arch, K9S_VERSION),
-    };
+    if expected_versions.mkcert != actual_versions.mkcert {
+        let mkcert_version = expected_versions
+            .mkcert
+            .ok_or(anyhow!("failed to read config"))?;
+        let mkcert = Download {
+            target: format!("mkcert{}", ext_str),
+            source: get_mkcert_url(&os, &arch, mkcert_version),
+        };
+        necessary_downloads.push(mkcert);
+    }
 
-    vec![docker, buildx, kubectl, helm, mkcert, skaffold, k9s]
+    if expected_versions.skaffold != actual_versions.skaffold {
+        let skaffold_version = expected_versions
+            .skaffold
+            .ok_or(anyhow!("failed to read config"))?;
+        let skaffold = Download {
+            target: format!("skaffold{}", ext_str),
+            source: get_skaffold_url(&os, &arch, skaffold_version),
+        };
+        necessary_downloads.push(skaffold);
+    }
+
+    if expected_versions.k9s != actual_versions.k9s {
+        let k9s_version = expected_versions
+            .k9s
+            .ok_or(anyhow!("failed to read config"))?;
+        let k9s = Download {
+            target: format!("k9s{}", ext_str),
+            source: get_k9s_url(&os, &arch, k9s_version),
+        };
+        necessary_downloads.push(k9s);
+    }
+
+    Ok(necessary_downloads)
 }
 
-fn get_docker_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_docker_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "win",
         TargetOs::MacOs => "mac",
@@ -108,7 +153,7 @@ fn get_docker_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_kubectl_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_kubectl_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "windows",
         TargetOs::MacOs => "darwin",
@@ -133,7 +178,7 @@ fn get_kubectl_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_helm_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_helm_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "windows",
         TargetOs::MacOs => "darwin",
@@ -158,7 +203,7 @@ fn get_helm_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_mkcert_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_mkcert_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "windows",
         TargetOs::MacOs => "darwin",
@@ -177,7 +222,7 @@ fn get_mkcert_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_skaffold_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_skaffold_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "windows",
         TargetOs::MacOs => "darwin",
@@ -202,7 +247,7 @@ fn get_skaffold_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_k9s_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_k9s_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "Windows",
         TargetOs::MacOs => "Darwin",
@@ -227,7 +272,7 @@ fn get_k9s_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
     .expect("failed to parse URL");
 }
 
-fn get_buildx_url(os: &TargetOs, arch: &TargetArch, version: &str) -> Url {
+fn get_buildx_url(os: &TargetOs, arch: &TargetArch, version: String) -> Url {
     let os_str = match os {
         TargetOs::Windows => "windows",
         TargetOs::MacOs => "darwin",

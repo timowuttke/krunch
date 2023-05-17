@@ -1,4 +1,5 @@
-use crate::shared::download_urls::get_downloads;
+use crate::cli_install::download_urls::get_necessary_downloads;
+use crate::cli_install::get_versions::create_default_config_if_needed;
 use crate::shared::file_folder_paths::{get_bin_folder, get_buildx_folder};
 use anyhow::{anyhow, Result};
 use flate2::read::GzDecoder;
@@ -16,22 +17,20 @@ use terminal_size::terminal_size;
 use walkdir::{DirEntry, WalkDir};
 
 pub async fn download_all() -> Result<()> {
-    let downloads = get_downloads();
+    create_default_config_if_needed()?;
+    let downloads = get_necessary_downloads()?;
+
+    if downloads.is_empty() {
+        println!("already done")
+    } else {
+        println!("necessary")
+    }
 
     for download in downloads {
         print!("{:<35}", format!("downloading {}", &download.target));
         io::stdout().flush().unwrap();
-
-        if download.target.starts_with("docker-buildx")
-            && get_buildx_folder()?.join(&download.target).exists()
-        {
-            println!("already done")
-        } else if get_bin_folder()?.join(&download.target).exists() {
-            println!("already done")
-        } else {
-            download_file(download.source, download.target.as_str()).await?;
-            println!("{:<35}success", format!("downloading {}", &download.target));
-        }
+        download_file(download.source, download.target.as_str()).await?;
+        println!("{:<35}success", format!("downloading {}", &download.target));
     }
 
     Ok(())
