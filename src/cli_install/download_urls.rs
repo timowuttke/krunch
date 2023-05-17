@@ -1,10 +1,17 @@
 use crate::cli_install::get_versions::{get_actual_versions, get_expected_versions};
 use anyhow::{anyhow, Result};
 use reqwest::Url;
+use std::fmt;
 
 pub struct Download {
     pub target: String,
     pub source: Url,
+}
+
+impl fmt::Debug for Download {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.target)
+    }
 }
 
 enum TargetOs {

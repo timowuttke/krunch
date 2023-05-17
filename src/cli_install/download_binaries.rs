@@ -23,7 +23,7 @@ pub async fn download_all() -> Result<()> {
     if downloads.is_empty() {
         println!("already done")
     } else {
-        println!("necessary")
+        println!("{:?}", downloads)
     }
 
     for download in downloads {
