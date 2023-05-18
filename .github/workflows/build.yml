@@ -16,6 +16,18 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo target
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
         run: cargo build --release --target x86_64-apple-darwin
 
@@ -37,6 +49,18 @@ jobs:
           target: aarch64-apple-darwin
           profile: minimal
           components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo target
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: cargo build --release --target aarch64-apple-darwin
@@ -93,6 +117,18 @@ jobs:
           target: x86_64-pc-windows-gnu
           profile: minimal
           components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo target
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build
         run: cargo build --release --target x86_64-pc-windows-gnu
