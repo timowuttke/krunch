@@ -4,7 +4,7 @@ on: [ workflow_dispatch ]
 
 jobs:
   build_darwin_amd64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
 
@@ -26,7 +26,7 @@ jobs:
           path: target/x86_64-apple-darwin/release/krunch
 
   build_darwin_arm64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
 
@@ -48,7 +48,7 @@ jobs:
           path: target/aarch64-apple-darwin/release/krunch
 
   build_linux_amd64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
 
@@ -60,6 +60,18 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
 
+      - name: Cache Cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache Cargo target
+        uses: actions/cache@v2
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
         run: cargo build --release --target x86_64-unknown-linux-gnu
 
@@ -70,7 +82,7 @@ jobs:
           path: target/x86_64-unknown-linux-gnu/release/krunch
 
   build_windows_amd64:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
 
