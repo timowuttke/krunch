@@ -45,6 +45,7 @@ fn point_docker_to_minikube_unix() -> Result<()> {
             )
             .as_str(),
         );
+        data.push_str("\n\n");
 
         fs::write(profile_path, data)?;
 

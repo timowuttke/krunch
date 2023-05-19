@@ -38,14 +38,11 @@ pub async fn cli_remove() -> Result<()> {
             println!("{}", err)
         };
     } else {
-        println!("{:<35}{}", "deleting DNS entry", "skipped (not admin)");
+        println!("{:<35}skipped (not admin)", "deleting DNS entry");
+        println!("{:<35}skipped (not admin)", "deleting CA and TLS secret");
         println!(
-            "{:<35}{}",
-            "deleting CA and TLS secret", "skipped (not admin)"
-        );
-        println!(
-            "{:<35}{}",
-            "deleting downloaded files", "skipped (needed for previously skipped step)"
+            "{:<35}skipped (needed for previously skipped step)",
+            "deleting downloaded files"
         );
     }
 

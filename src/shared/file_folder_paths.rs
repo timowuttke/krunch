@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use std::env;
 use std::path::PathBuf;
 
 pub enum Binary {
@@ -33,40 +34,59 @@ pub fn get_binary_path(binary: Binary) -> Result<PathBuf> {
     Ok(path)
 }
 
+pub fn get_krunch_folder() -> Result<PathBuf> {
+    let home_dir = home::home_dir().ok_or(anyhow!("failed to detect home directory"))?;
+    Ok(home_dir.join(".krunch"))
+}
+
 pub fn get_bin_folder() -> Result<PathBuf> {
-    return match home::home_dir() {
-        None => return Err(anyhow!("failed to detect home directory")),
-        Some(inner) => Ok(inner.join(".krunch/bin")),
-    };
+    let home_dir = home::home_dir().ok_or(anyhow!("failed to detect home directory"))?;
+    Ok(home_dir.join(".krunch/bin"))
 }
 
 pub fn get_config_file_path() -> Result<PathBuf> {
-    return match home::home_dir() {
-        None => return Err(anyhow!("failed to detect home directory")),
-        Some(inner) => Ok(inner.join(".krunch/config.json")),
-    };
+    let home_dir = home::home_dir().ok_or(anyhow!("failed to detect home directory"))?;
+    Ok(home_dir.join(".krunch/config.json"))
 }
 
 pub fn get_buildx_folder() -> Result<PathBuf> {
-    return match home::home_dir() {
-        None => return Err(anyhow!("failed to detect home directory")),
-        Some(inner) => Ok(inner.join(".docker/cli-plugins")),
-    };
+    let home_dir = home::home_dir().ok_or(anyhow!("failed to detect home directory"))?;
+    Ok(home_dir.join(".docker/cli-plugins"))
 }
 
 pub fn get_shell_profile_path() -> Result<PathBuf> {
-    let mut profile_path = home::home_dir().expect("no home directory found");
+    let shell =
+        env::var("SHELL").map_err(|_| anyhow!("Failed to get SHELL environment variable"))?;
+    if !shell.contains("bash") && !shell.contains("zsh") {
+        return Err(anyhow!(
+            "Unsupported shell. Only bash and zsh are supported."
+        ));
+    }
 
-    // todo: check for different shell variants, e.g. fn get_unix_file_for_path and make sure file exists
-    profile_path.push(".profile");
+    let home_dir = home::home_dir().ok_or(anyhow!("failed to detect home directory"))?;
 
-    Ok(profile_path)
+    let bash_profiles = vec![".bashrc", ".bash_profile", ".bash_login", ".profile"];
+    let zsh_profiles = vec![".zshrc", ".zprofile", ".zlogin"];
+    let profiles = if shell.contains("bash") {
+        bash_profiles
+    } else {
+        zsh_profiles
+    };
+
+    for profile in profiles {
+        let profile_path = home_dir.join(profile);
+        if profile_path.exists() {
+            return Ok(profile_path);
+        }
+    }
+
+    Err(anyhow!("No suitable profile file found."))
 }
 
 pub fn get_etc_hosts_path() -> Result<PathBuf> {
-    return if cfg!(target_os = "windows") {
+    if cfg!(target_os = "windows") {
         Ok(PathBuf::from("C:/Windows/System32/Drivers/etc/hosts"))
     } else {
         Ok(PathBuf::from("/etc/hosts"))
-    };
+    }
 }

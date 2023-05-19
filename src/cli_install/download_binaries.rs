@@ -68,19 +68,15 @@ async fn download_file(url: Url, target_name: &str) -> Result<()> {
 }
 
 fn handle_tmp_file(tmp_file_path: PathBuf, target_name: &str) -> Result<()> {
-    let target_path;
-
-    if target_name.starts_with("docker-buildx") {
+    let target_path = if target_name.starts_with("docker-buildx") {
         let buildx_folder = get_buildx_folder()?;
         fs::create_dir_all(&buildx_folder)?;
-
-        target_path = buildx_folder.join(target_name);
+        buildx_folder.join(target_name)
     } else {
         let bin_folder = get_bin_folder()?;
         fs::create_dir_all(&bin_folder)?;
-
-        target_path = bin_folder.join(target_name);
-    }
+        bin_folder.join(target_name)
+    };
 
     if tmp_file_path.to_str().unwrap().ends_with(".tar.gz")
         || tmp_file_path.to_str().unwrap().ends_with(".tgz")
@@ -115,7 +111,7 @@ fn find_and_copy_file(dir: TempDir, to_find: &str, target_path: &PathBuf) -> Res
         .filter(|e: &DirEntry| e.file_type().is_file())
     {
         if file.file_name() == to_find {
-            fs::copy(file.path(), &target_path)?;
+            fs::copy(file.path(), target_path)?;
         }
     }
 

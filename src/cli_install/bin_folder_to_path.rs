@@ -23,8 +23,15 @@ fn add_bin_folder_to_path_unix() -> Result<()> {
     if data.contains(&bin_folder.display().to_string()) {
         println!("already done");
     } else {
-        data.push_str("\n\n# krunch");
-        data.push_str(format!("\nexport PATH=\"{}:$PATH\"", bin_folder.display()).as_str());
+        let conditional_path_export = format!(
+            "if [[ \":$PATH:\" != *\":{}:\"* ]]; then export PATH=\"{}:$PATH\"; fi",
+            bin_folder.display(),
+            bin_folder.display()
+        );
+
+        data.push_str("\n\n# krunch\n");
+        data.push_str(conditional_path_export.as_str());
+        data.push_str("\n\n");
 
         fs::write(profile_path, data)?;
         println!("success");
@@ -35,12 +42,12 @@ fn add_bin_folder_to_path_unix() -> Result<()> {
 
 fn add_bin_folder_to_path_windows() -> Result<()> {
     let current_path = read_from_environment("Path")?;
-    let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
+    let bin_folder = get_bin_folder()?.display().to_string().replace('/', "\\");
 
     if current_path.contains(&bin_folder) {
         println!("already done");
     } else {
-        let divider = if current_path.ends_with(";") { "" } else { ";" };
+        let divider = if current_path.ends_with(';') { "" } else { ";" };
         let new_path = format!("{}{}{};", current_path, divider, bin_folder);
         write_to_environment("Path", new_path)?;
 

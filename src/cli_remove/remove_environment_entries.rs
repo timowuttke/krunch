@@ -65,7 +65,7 @@ fn remove_environment_entries_windows() -> Result<()> {
         delete_from_environment("MINIKUBE_ACTIVE_DOCKERD")?;
 
         let current_path = read_from_environment("Path")?;
-        let bin_folder = get_bin_folder()?.display().to_string().replace("/", "\\");
+        let bin_folder = get_bin_folder()?.display().to_string().replace('/', "\\");
         let new_path = current_path.replace(&format!(";{}", bin_folder), "");
 
         write_to_environment("Path", new_path)?;

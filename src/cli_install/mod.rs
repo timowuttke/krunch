@@ -39,7 +39,7 @@ pub async fn cli_install() -> Result<()> {
 
     print!("{:<35}", "enabling ingress addon");
     io::stdout().flush().unwrap();
-    if let Err(err) = enable_ingress_addon_if_needed() {
+    if let Err(err) = enable_ingress_addon_if_needed().await {
         println!("{}", err)
     };
 

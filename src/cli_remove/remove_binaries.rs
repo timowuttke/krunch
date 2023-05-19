@@ -1,14 +1,14 @@
-use crate::shared::file_folder_paths::{get_bin_folder, get_buildx_folder};
+use crate::shared::file_folder_paths::{get_buildx_folder, get_krunch_folder};
 use anyhow::Result;
 use std::fs;
 
 pub fn remove_binaries() -> Result<()> {
     let mut nothing_done = true;
 
-    let bin_folder = get_bin_folder()?;
-    if bin_folder.exists() {
+    let krunch_folder = get_krunch_folder()?;
+    if krunch_folder.exists() {
         nothing_done = false;
-        fs::remove_dir_all(bin_folder)?;
+        fs::remove_dir_all(krunch_folder)?;
     }
 
     let extension = if cfg!(target_os = "windows") {

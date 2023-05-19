@@ -4,7 +4,7 @@ use kube::config;
 use std::fs;
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use tempfile::Builder;
 
@@ -12,11 +12,11 @@ pub mod file_folder_paths;
 pub mod windows_registry;
 
 #[cfg(windows)]
-pub const LINE_ENDING: &'static str = "\r\n";
+pub const LINE_ENDING: &str = "\r\n";
 #[cfg(not(windows))]
-pub const LINE_ENDING: &'static str = "\n";
-pub const MINIKUBE_HOST: &'static str = "k8s.local";
-pub const TLS_SECRET: &'static str = "tls";
+pub const LINE_ENDING: &str = "\n";
+pub const MINIKUBE_HOST: &str = "k8s.local";
+pub const TLS_SECRET: &str = "tls";
 
 pub fn handle_output(output: Output) -> Result<String> {
     let stdout = String::from_utf8(output.stdout.to_vec())?;
@@ -71,12 +71,12 @@ pub async fn get_minikube_client() -> Result<kube::Client> {
 
 pub fn update_etc_hosts(data: String) -> Result<()> {
     let tmp_file = Builder::new().tempfile()?;
-    fs::write(&tmp_file, &data)?;
+    fs::write(&tmp_file, data)?;
 
     if cfg!(target_family = "unix") {
         copy_as_admin_unix(&tmp_file.path().to_path_buf(), &get_etc_hosts_path()?)?;
     } else if cfg!(target_family = "windows") {
-        copy_as_admin_windows(&tmp_file.path().to_path_buf(), &get_etc_hosts_path()?)?;
+        copy_as_admin_windows(tmp_file.path(), &get_etc_hosts_path()?)?;
     }
 
     Ok(())
@@ -90,7 +90,7 @@ fn copy_as_admin_unix(from: &PathBuf, to: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn copy_as_admin_windows(from: &PathBuf, to: &PathBuf) -> Result<()> {
+fn copy_as_admin_windows(from: &Path, to: &Path) -> Result<()> {
     let tmp_dir = Builder::new().tempdir()?;
     let tmp_file_path = tmp_dir.path().join("krunch");
 

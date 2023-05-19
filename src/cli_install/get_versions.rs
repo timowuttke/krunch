@@ -3,7 +3,7 @@ use crate::shared::handle_output;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use serde_json::json;
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
 use std::process::Command;
 
@@ -67,6 +67,11 @@ pub fn create_default_config_if_needed() -> Result<()> {
             }
         });
 
+        create_dir_all(
+            get_config_file_path()?
+                .parent()
+                .ok_or(anyhow!("failed to create config file path"))?,
+        )?;
         let mut file = File::create(get_config_file_path()?)?;
         file.write_all(versions.to_string().as_bytes())?;
     }
