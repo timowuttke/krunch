@@ -73,7 +73,7 @@ pub fn create_default_config_if_needed() -> Result<()> {
                 .ok_or(anyhow!("failed to create config file path"))?,
         )?;
         let mut file = File::create(get_config_file_path()?)?;
-        file.write_all(versions.to_string().as_bytes())?;
+        file.write_all(serde_json::to_string_pretty(&versions)?.as_bytes())?;
     }
 
     Ok(())
