@@ -83,7 +83,7 @@ pub fn update_etc_hosts(data: String) -> Result<()> {
 }
 
 fn copy_as_admin_unix(from: &PathBuf, to: &PathBuf) -> Result<()> {
-    let output = Command::new("sudo").arg("mv").arg(from).arg(to).output()?;
+    let output = Command::new("sudo").arg("-p").arg("[sudo] ").arg("mv").arg(from).arg(to).output()?;
 
     handle_output(output)?;
 
