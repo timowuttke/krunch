@@ -10,6 +10,7 @@ containers in no time!
 - nothing else :)
 
 ## What it does
+![krunch](https://github.com/timowuttke/krunch/assets/47751895/ec4cfd20-50b6-4d47-922e-c987de84570b)
 With `krunch install` you perform the following tasks:
 1. **Tools Download:** Krunch starts by downloading a collection of frequently used tools. This includes docker-cli, 
 docker-buildx, kubectl, helm, [mkcert](https://github.com/FiloSottile/mkcert), 
