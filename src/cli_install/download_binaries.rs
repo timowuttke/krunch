@@ -123,7 +123,7 @@ fn get_progress_bar(total_size: u64, target_name: &str) -> ProgressBar {
 
     let style = match term_width {
         0..=100 => "\r{msg}{bytes}/{total_bytes}".to_string(),
-        _ => "\r{msg}[{bar:40.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec})".to_string(),
+        _ => "\r{msg}[{bar:30.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec})".to_string(),
     };
 
     let pb = ProgressBar::new(total_size);
