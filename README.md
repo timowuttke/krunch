@@ -1,9 +1,11 @@
 ![krunch_logo](https://user-images.githubusercontent.com/47751895/235236895-9b07f0fe-351d-4ef1-8713-0d98888af5ce.svg)
 
-Krunch is an all-in-one solution for configuring a Minikube-based local development environment. It's especially useful
-if you want to transition away from Docker Desktop, have never worked with containers and Kubernetes before, or if you
-are looking for a uniform setup across your team. Either way, Krunch will get you started building docker images and deploying 
-containers in no time!
+Containerized development setups have many advantages, but are often annoyingly cumbersome to configure. Krunch solves
+this problem by offering a one-step solution to create a Minikube-based local development setup. 
+
+It does not matter if you want to transition away from Docker Desktop, have never worked with containers and Kubernetes 
+before, or if you are looking for a uniform setup across your team. Krunch will get you started building Docker images
+and deploying containers in no time!
 
 ## Prerequisites
 - [minikube](https://minikube.sigs.k8s.io/docs/start/) is up and running
