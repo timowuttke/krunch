@@ -3,9 +3,11 @@
 Containerized development setups have many advantages, but are often annoyingly cumbersome to configure. Krunch solves
 this problem by offering a one-step solution to create a Minikube-based local development setup. 
 
-It does not matter if you want to transition away from Docker Desktop, have never worked with containers and Kubernetes 
-before, or if you are looking for a uniform setup across your team. Krunch will get you started building Docker images
-and deploying containers in no time!
+With Krunch you can
+- create and maintain consistent tooling across your team
+- onboard new team members quickly
+- easily transition away from Docker Desktop
+- get first your experience with Docker and Kubernetes
 
 ## Prerequisites
 - [minikube](https://minikube.sigs.k8s.io/docs/start/) is up and running
