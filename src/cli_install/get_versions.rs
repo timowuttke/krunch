@@ -7,10 +7,10 @@ use std::fs::{create_dir_all, File};
 use std::io::{Read, Write};
 use std::process::Command;
 
-const KUBECTL_VERSION: &str = "1.23.3";
-const HELM_VERSION: &str = "3.2.0";
+const KUBECTL_VERSION: &str = "1.28.3";
+const HELM_VERSION: &str = "3.14.4";
 const MKCERT_VERSION: &str = "1.4.4";
-const SKAFFOLD_VERSION: &str = "2.3.1";
+const SKAFFOLD_VERSION: &str = "2.11.1";
 const K9S_VERSION: &str = "0.27.3";
 const DOCKER_VERSION: &str = "23.0.4";
 const BUILDX_VERSION: &str = "0.10.4";
@@ -83,7 +83,7 @@ fn get_kubectl_version() -> Result<Option<String>> {
     get_any_version(
         Binary::Kubectl,
         "version",
-        r#"Client Version:.*GitVersion:"v([\d\.]+)""#,
+        r#"^Client Version.*?v([\d\.]+)"#,
     )
 }
 
