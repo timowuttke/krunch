@@ -13,7 +13,6 @@ jobs:
         with:
           toolchain: stable
           target: x86_64-apple-darwin
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
@@ -47,7 +46,6 @@ jobs:
         with:
           toolchain: stable
           target: aarch64-apple-darwin
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
@@ -81,7 +79,6 @@ jobs:
         with:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
@@ -115,7 +112,6 @@ jobs:
         with:
           toolchain: stable
           target: x86_64-pc-windows-gnu
-          profile: minimal
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
